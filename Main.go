@@ -28,6 +28,20 @@ func ccw(a Line, r Point) float64 {
 	return p.y*r.x - q.y*r.x + q.x*r.y - p.x*r.y - p.y*q.x + p.x*q.y
 }
 
+type MatchingIndices struct {
+	indexA, indexB int
+}
+
+func NewMatchingIndices(indexA, indexB int) *MatchingIndices {
+	obj := new(MatchingIndices)
+	if (indexA <= indexB) {
+		obj.indexA, obj.indexB = indexA, indexB
+	} else {
+		obj.indexA, obj.indexB = indexB, indexA
+	}
+	return obj
+}
+
 
 func main() {
 
@@ -42,6 +56,7 @@ func main() {
 	defer outputFile.Close()
 
 	var data []*Line
+	currentLineIndex := 0
 
 	scanner := bufio.NewScanner(inputFile)
 	for scanner.Scan() {
@@ -53,7 +68,9 @@ func main() {
 
 		_, err = fmt.Fscan(strings.NewReader(scanner.Text()), &p0, &p1, &q0, &q1)
 		check(err)
-		line := NewLine(Point{p0, p1}, Point{q0, q1})
+		line := NewLine(currentLineIndex, Point{p0, p1}, Point{q0, q1})
+		currentLineIndex++
+
 		//line := Line{Point{p0, p1}, Point{q0, q1}}
 		data = append(data, line)
 	}
@@ -69,8 +86,9 @@ func main() {
 	fmt.Println("Time passed (Sorting Data): ", time.Since(startTime))
 
 
-	totalHits := 0
-	writer := bufio.NewWriter(outputFile)
+	// TODO: parallel https://stackoverflow.com/questions/24238820/parallel-for-loop
+
+	var results []*MatchingIndices
 	for iLineP := 0; iLineP < len(data); iLineP++ {
 		lineP := data[iLineP]
 
@@ -86,15 +104,27 @@ func main() {
 			}
 
 			if lineP.isCrossedBy(*lineQ) {
-				totalHits++
-				_, err = writer.WriteString(strconv.Itoa(iLineP) + "_" + strconv.Itoa(iLineQ) + "\n")
-				check(err)
+				results = append(results, NewMatchingIndices(lineP.index, lineQ.index))
 			}
 		}
 	}
 
+	fmt.Println("Time passed (Calculating Matches): ", time.Since(startTime))
+	fmt.Println("Num crossed lines:  ", len(results));
+
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].indexA == results[j].indexA {
+			return results[i].indexB < results[j].indexB
+		}
+		return results[i].indexA < results[j].indexA
+	})
+
+	writer := bufio.NewWriter(outputFile)
+	for _, result := range results {
+		_, err = writer.WriteString(strconv.Itoa(result.indexA) + "_" + strconv.Itoa(result.indexB) + "\n")
+		check(err)
+	}
 	check(writer.Flush())
 
-	fmt.Println("Num crossed lines:  ", totalHits);
 	fmt.Println("Time passed: ", time.Since(startTime))
 }

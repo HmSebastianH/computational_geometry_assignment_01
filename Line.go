@@ -1,12 +1,14 @@
 package main
 
 type Line struct {
+	index int
 	start Point
 	end   Point
 }
 
-func NewLine(p, q Point) *Line {
+func NewLine(index int, p, q Point) *Line {
 	obj := new(Line)
+	obj.index = index
 	if (p.x <= q.x) {
 		obj.start, obj.end = p, q
 	} else {
