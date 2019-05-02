@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -46,10 +47,10 @@ func NewMatchingIndices(indexA, indexB int) *MatchingIndices {
 func main() {
 
 	startTime := time.Now()
-	inputFile, err := os.Open("data/s_100000_1.dat")
+	inputFile, err := os.Open("data/s_1000_1.dat")
 	check(err)
 
-	outputFile, err := os.Create("data/result_100000_1.dat")
+	outputFile, err := os.Create("data/result_1000_1.dat")
 	check(err)
 
 	defer inputFile.Close()
@@ -86,17 +87,16 @@ func main() {
 	fmt.Println("Time passed (Sorting Data): ", time.Since(startTime))
 
 
-	// TODO: parallel https://stackoverflow.com/questions/24238820/parallel-for-loop
+	// TODO: make chanel buffering "save"
+	ch := make(chan *MatchingIndices, 100000)
+	wg := sync.WaitGroup{}
 
-	var results []*MatchingIndices
 	for iLineP := 0; iLineP < len(data); iLineP++ {
-		lineP := data[iLineP]
 
-		for iLineQ := iLineP+1; iLineQ < len(data); iLineQ++ {
-			if iLineQ == iLineP {
-				continue // skip itself
-			}
-
+		wg.Add(1)
+		go findOverlapsForLine(iLineP, &data, ch, &wg)
+		//lineP := data[iLineP]
+		/*for iLineQ := iLineP+1; iLineQ < len(data); iLineQ++ {
 			lineQ := data[iLineQ]
 			if lineQ.start.x > lineP.end.x {
 				// The other lines starts after this one ends, no possible overlap
@@ -106,7 +106,14 @@ func main() {
 			if lineP.isCrossedBy(*lineQ) {
 				results = append(results, NewMatchingIndices(lineP.index, lineQ.index))
 			}
-		}
+		}*/
+	}
+
+	wg.Wait()
+	close(ch)
+	var results []*MatchingIndices
+	for match := range ch {
+		results = append(results, match)
 	}
 
 	fmt.Println("Time passed (Calculating Matches): ", time.Since(startTime))
@@ -127,4 +134,21 @@ func main() {
 	check(writer.Flush())
 
 	fmt.Println("Time passed: ", time.Since(startTime))
+}
+
+func findOverlapsForLine(lineIndex int, allLines *[]*Line,ch chan *MatchingIndices, wg *sync.WaitGroup) {
+	defer wg.Done()
+	lineP := (*allLines)[lineIndex]
+	for iLineQ := lineIndex+1; iLineQ < len(*allLines); iLineQ++ {
+
+		lineQ := (*allLines)[iLineQ]
+		if lineQ.start.x > lineP.end.x {
+			// The other lines starts after this one ends, no possible overlap
+			return
+		}
+
+		if lineP.isCrossedBy(*lineQ) {
+			ch <- NewMatchingIndices(lineP.index, lineQ.index)
+		}
+	}
 }
