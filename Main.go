@@ -95,18 +95,6 @@ func main() {
 
 		wg.Add(1)
 		go findOverlapsForLine(iLineP, &data, ch, &wg)
-		//lineP := data[iLineP]
-		/*for iLineQ := iLineP+1; iLineQ < len(data); iLineQ++ {
-			lineQ := data[iLineQ]
-			if lineQ.start.x > lineP.end.x {
-				// The other lines starts after this one ends, no possible overlap
-				break
-			}
-
-			if lineP.isCrossedBy(*lineQ) {
-				results = append(results, NewMatchingIndices(lineP.index, lineQ.index))
-			}
-		}*/
 	}
 
 	wg.Wait()
