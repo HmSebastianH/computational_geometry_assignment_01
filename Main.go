@@ -4,10 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -60,6 +58,8 @@ func main() {
 	currentLineIndex := 0
 
 	scanner := bufio.NewScanner(inputFile)
+	check(scanner.Err())
+
 	for scanner.Scan() {
 		var p0 float64
 		var p1 float64
@@ -75,56 +75,11 @@ func main() {
 		//line := Line{Point{p0, p1}, Point{q0, q1}}
 		data = append(data, line)
 	}
-	check(scanner.Err())
 
 	fmt.Println("Time passed (Reading Data): ", time.Since(startTime))
 
-
-	sort.Slice(data, func(i, j int) bool {
-		return data[i].start.x < data[j].start.x
-	})
-
-	fmt.Println("Time passed (Sorting Data): ", time.Since(startTime))
-
-
-	// TODO: make chanel buffering "save"
-	ch := make(chan *MatchingIndices, 100000)
-	wg := sync.WaitGroup{}
-
-	for iLineP := 0; iLineP < len(data); iLineP++ {
-
-		wg.Add(1)
-		go findOverlapsForLine(iLineP, &data, ch, &wg)
-		//lineP := data[iLineP]
-		/*for iLineQ := iLineP+1; iLineQ < len(data); iLineQ++ {
-			lineQ := data[iLineQ]
-			if lineQ.start.x > lineP.end.x {
-				// The other lines starts after this one ends, no possible overlap
-				break
-			}
-
-			if lineP.isCrossedBy(*lineQ) {
-				results = append(results, NewMatchingIndices(lineP.index, lineQ.index))
-			}
-		}*/
-	}
-
-	wg.Wait()
-	close(ch)
 	var results []*MatchingIndices
-	for match := range ch {
-		results = append(results, match)
-	}
 
-	fmt.Println("Time passed (Calculating Matches): ", time.Since(startTime))
-	fmt.Println("Num crossed lines:  ", len(results));
-
-	sort.Slice(results, func(i, j int) bool {
-		if results[i].indexA == results[j].indexA {
-			return results[i].indexB < results[j].indexB
-		}
-		return results[i].indexA < results[j].indexA
-	})
 
 	writer := bufio.NewWriter(outputFile)
 	for _, result := range results {
@@ -134,21 +89,4 @@ func main() {
 	check(writer.Flush())
 
 	fmt.Println("Time passed: ", time.Since(startTime))
-}
-
-func findOverlapsForLine(lineIndex int, allLines *[]*Line,ch chan *MatchingIndices, wg *sync.WaitGroup) {
-	defer wg.Done()
-	lineP := (*allLines)[lineIndex]
-	for iLineQ := lineIndex+1; iLineQ < len(*allLines); iLineQ++ {
-
-		lineQ := (*allLines)[iLineQ]
-		if lineQ.start.x > lineP.end.x {
-			// The other lines starts after this one ends, no possible overlap
-			return
-		}
-
-		if lineP.isCrossedBy(*lineQ) {
-			ch <- NewMatchingIndices(lineP.index, lineQ.index)
-		}
-	}
 }
