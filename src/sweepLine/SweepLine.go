@@ -11,8 +11,8 @@ import (
 
 // Btree represents an AVL tree
 type SweepLine struct {
-	root   *Node
-	len    int
+	Root *Node
+	len  int
 }
 
 
@@ -28,53 +28,55 @@ func NewSweepLine() *SweepLine { return new(SweepLine).Init() }
 
 // Init initializes all values/clears the tree and returns the tree pointer
 func (t *SweepLine) Init() *SweepLine {
-	t.root = nil
+	t.Root = nil
 	t.len = 0
 	return t
 }
 
 // Empty returns true if the tree is empty
 func (t *SweepLine) Empty() bool {
-	return t.root == nil
+	return t.Root == nil
 }
 
 // NotEmpty returns true if the tree is not empty
 func (t *SweepLine) NotEmpty() bool {
-	return t.root != nil
+	return t.Root != nil
 }
 
 func (t *SweepLine) balance() int8 {
-	if t.root != nil {
-		return balance(t.root)
+	if t.Root != nil {
+		return balance(t.Root)
 	}
 	return 0
 }
 
 // Insert inserts a new value into the tree and returns the tree pointer
-func (t *SweepLine) Insert(value Line) *SweepLine {
+func (t *SweepLine) Insert(value Line) *Node {
 	if value.Start.X != value.End.X {
 		panic("Vertical Lines / Points are not supported by the Sweep line")
 	}
-	added := false
-	t.root = t.root.insert(nil, value, &added)
-	if added {
+	var insertedNode Node
+	t.Root = t.Root.insert(nil, value, &insertedNode)
+	if insertedNode.parent != nil {
 		t.len++
 	}
-	return t
+	return &insertedNode
 }
 
-func (n *Node) insert(parent *Node, value Line, added *bool) *Node {
+func (n *Node) insert(parent *Node, value Line, insertedNode *Node) *Node {
 	if n == nil {
 		// If this is a empty leaf insert the line here
-		*added = true
+		newNode := Node{Value: value}
+		newNode.Init().setParent(parent)
+		insertedNode = &newNode
 		return (&Node{Value: value}).Init().setParent(parent)
 	}
 	ccw := Ccw(n.Value, value.Start)
 	if ccw > 0 {
-		n.right = n.right.insert(n, value, added)
+		n.right = n.right.insert(n, value, insertedNode)
 	} else {
 		// Points with overlap or to the left of the line are inserted to its left
-		n.left = n.left.insert(n, value, added)
+		n.left = n.left.insert(n, value, insertedNode)
 	}
 
 	n.height = n.maxHeight() + 1
@@ -107,10 +109,10 @@ func (t *SweepLine) Len() int {
 
 // Head returns the first value in the tree
 func (t *SweepLine) Head() *Line {
-	if t.root == nil {
+	if t.Root == nil {
 		return nil
 	}
-	var beginning = t.root
+	var beginning = t.Root
 	for beginning.left != nil {
 		beginning = beginning.left
 	}
@@ -127,10 +129,10 @@ func (t *SweepLine) Head() *Line {
 
 // Tail returns the last value in the tree
 func (t *SweepLine) Tail() *Line {
-	if t.root == nil {
+	if t.Root == nil {
 		return nil
 	}
-	var beginning = t.root
+	var beginning = t.Root
 	for beginning.right != nil {
 		beginning = beginning.right
 	}
@@ -142,6 +144,50 @@ func (t *SweepLine) Tail() *Line {
 	if beginning != nil {
 		return &beginning.Value
 	}
+	return nil
+}
+
+// Len return the number of nodes in the tree
+func (n *Node) Left() *Node {
+	if n.left != nil {
+		return n.left.max()
+	}
+
+	// I am a left node with no children, search a parent which is left of me
+	currentParent := n.parent
+	currentParrentChild := n
+	for currentParent != nil {
+		if currentParrentChild == currentParent.right {
+			// We found a path where the tree we came from is on the right, therfore the node is to the left
+			return currentParent
+		}
+		currentParrentChild = currentParent
+		currentParent = currentParent.parent
+	}
+
+	// If nothing matched for now, this is the last node in the tree
+	return nil
+}
+
+// Len return the number of nodes in the tree
+func (n *Node) Right() *Node {
+	if n.right != nil {
+		return n.right.min()
+	}
+
+	// I am a left node with no children, search a parent which is left of me
+	currentParent := n.parent
+	currentParrentChild := n
+	for currentParent != nil {
+		if currentParrentChild == currentParent.left {
+			// We found a path where the tree we came from is on the left, therfore the node is to the right
+			return currentParent
+		}
+		currentParrentChild = currentParent
+		currentParent = currentParent.parent
+	}
+
+	// If nothing matched for now, this is the last node in the tree
 	return nil
 }
 
@@ -282,6 +328,14 @@ func (n *Node) min() *Node {
 	current := n
 	for current.left != nil {
 		current = current.left
+	}
+	return current
+}
+
+func (n *Node) max() *Node {
+	current := n
+	for current.right != nil {
+		current = current.right
 	}
 	return current
 }

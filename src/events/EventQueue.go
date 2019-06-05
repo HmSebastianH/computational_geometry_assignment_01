@@ -11,7 +11,7 @@ import (
 
 // EventQueue represents an AVL tree
 type EventQueue struct {
-	root   *Node
+	Root *Node
 }
 
 
@@ -27,21 +27,39 @@ func NewEventQueue() *EventQueue { return new(EventQueue).Init() }
 
 // Init initializes all values/clears the tree and returns the tree pointer
 func (t *EventQueue) Init() *EventQueue {
-	t.root = nil
+	t.Root = nil
 	return t
 }
 
 func (t *EventQueue) balance() int8 {
-	if t.root != nil {
-		return balance(t.root)
+	if t.Root != nil {
+		return balance(t.Root)
 	}
 	return 0
+}
+
+func (t *EventQueue) AssertOrder() {
+	t.Root.assertOrder()
+}
+
+func (n *Node) assertOrder() {
+	if n == nil {
+		return
+	}
+	n.left.assertOrder()
+	n.right.assertOrder()
+	if n.left != nil && n.Value.CompareTo(n.left.Value) != -1 {
+		panic("Bad order")
+	}
+	if n.right != nil && n.Value.CompareTo(n.right.Value) != 1 {
+		panic("Bad order")
+	}
 }
 
 // Insert inserts a new value into the tree and returns the tree pointer
 func (t *EventQueue) Insert(value SweepEvent) *EventQueue {
 	added := false
-	t.root = insert(t.root, value, &added)
+	t.Root = insert(t.Root, value, &added)
 	return t
 }
 
@@ -52,7 +70,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		*added = true
 		return (&Node{Value: value}).Init()
 	}
-	comp := CompEvents(n.Value, value)
+	comp := n.Value.CompareTo(value)
 	if comp > 0 {
 		n.right = insert(n.right, value, added)
 	} else {
@@ -64,7 +82,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 	currentBalance := balance(n)
 
 	if currentBalance > 1 {
-		comp := CompEvents(n.left.Value, value)
+		comp := n.left.Value.CompareTo(value)
 		if comp <= 0 {
 			return n.rotateRight()
 		} else {
@@ -72,7 +90,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 			return n.rotateRight()
 		}
 	} else if currentBalance < -1 {
-		comp = CompEvents(n.right.Value, value)
+		comp = n.right.Value.CompareTo(value)
 		if comp > 0 {
 			return n.rotateLeft()
 		} else {
@@ -86,10 +104,10 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 
 // Head returns the first value in the tree
 func (t *EventQueue) Head() *Node {
-	if t.root == nil {
+	if t.Root == nil {
 		return nil
 	}
-	var beginning = t.root
+	var beginning = t.Root
 	for beginning.left != nil {
 		beginning = beginning.left
 	}
@@ -100,23 +118,23 @@ func (t *EventQueue) Head() *Node {
 }
 
 func (t *EventQueue) Pop() SweepEvent {
-	if t.root == nil {
+	if t.Root == nil {
 		return nil
 	}
-	if t.root.left == nil {
-		// Pop the root itself
-		headNode := t.root
-		t.root = headNode.right
+	if t.Root.right == nil {
+		// Pop the Root itself
+		headNode := t.Root
+		t.Root = headNode.left
 		return headNode.Value
 	}
 	// Find "first" event
-	parentNode := t.root
-	headNode := t.root.left
-	for headNode.left != nil {
+	parentNode := t.Root
+	headNode := t.Root.right
+	for headNode.right != nil {
 		parentNode = headNode
-		headNode = headNode.left
+		headNode = headNode.right
 	}
-	parentNode.left = headNode.right
+	parentNode.right = headNode.left
 
 	t.balance() // TODO: test performance without balancing
 	// Note: A tree is probably not the bestt structure for almost always accessing the first member

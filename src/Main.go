@@ -1,6 +1,7 @@
 package main
 
 import (
+	"algorithms"
 	"bufio"
 	"fmt"
 	"geometry"
@@ -29,7 +30,7 @@ func main() {
 	inputFile, err := os.Open("data/s_1000_1.dat")
 	check(err)
 
-	outputFile, err := os.Create("data/result_1000_1.dat")
+	outputFile, err := os.Create("data/result_1000_s.dat")
 	check(err)
 
 	defer inputFile.Close()
@@ -59,12 +60,12 @@ func main() {
 
 	fmt.Println("Time passed (Reading Data): ", time.Since(startTime))
 
-	var results []*MatchingIndices
+	results := algorithms.LineSweep(data)
 
 
 	writer := bufio.NewWriter(outputFile)
 	for _, result := range results {
-		_, err = writer.WriteString(strconv.Itoa(result.indexA) + "_" + strconv.Itoa(result.indexB) + "\n")
+		_, err = writer.WriteString(strconv.Itoa(result.IndexA) + "_" + strconv.Itoa(result.IndexB) + "\n")
 		check(err)
 	}
 	check(writer.Flush())

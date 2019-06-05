@@ -17,7 +17,7 @@ func NewLine(index int, p, q Point) *Line {
 	return obj
 }
 
-func (p *Line) isCrossedBy(q Line) bool {
+func (p *Line) IsCrossedBy(q Line) bool {
 	if p.isPoint() {
 		if q.isPoint() {
 			return p.Start.equals(q.Start)
@@ -50,6 +50,10 @@ func (p *Line) isCrossedBy(q Line) bool {
 	ccwB = Ccw(q, p.End)
 
 	return ccwA * ccwB <= 0
+}
+
+func (p *Line) GetIntersectionWith(q Line) * Point {
+	return nil
 }
 
 func (a *Line) isPoint () bool {
@@ -98,15 +102,15 @@ func Ccw(a Line, r Point) float64 {
 
 
 type MatchingIndices struct {
-	indexA, indexB int
+	IndexA, IndexB int
 }
 
 func NewMatchingIndices(indexA, indexB int) *MatchingIndices {
 	obj := new(MatchingIndices)
 	if (indexA <= indexB) {
-		obj.indexA, obj.indexB = indexA, indexB
+		obj.IndexA, obj.IndexB = indexA, indexB
 	} else {
-		obj.indexA, obj.indexB = indexB, indexA
+		obj.IndexA, obj.IndexB = indexB, indexA
 	}
 	return obj
 }

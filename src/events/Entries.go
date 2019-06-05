@@ -6,6 +6,7 @@ import . "geometry"
 type SweepEvent interface {
 	GetX() float64
 	getPriority() int8
+	CompareTo(e SweepEvent) int8
 }
 
 
@@ -16,6 +17,20 @@ func (t LineStartEvent) GetX() float64 {
 	return t.Line.Start.X
 }
 func (t LineStartEvent) getPriority() int8 { return 1 }
+func NewLineStartEvent(line Line) * LineStartEvent {
+	return &LineStartEvent{line}
+}
+func (t LineStartEvent) CompareTo(e SweepEvent) int8 {
+	defaultResult := defaultComp(t, e)
+	if defaultResult != 0 {
+		return defaultResult
+	}
+	lineStartEvent := e.(*LineStartEvent)
+	indexDif := t.Line.Index - lineStartEvent.Line.Index
+
+	return abs(indexDif)
+}
+
 
 
 
@@ -26,6 +41,16 @@ func (t VerticalLineEvent) GetX() float64 {
 	return t.Line.Start.X
 }
 func (t VerticalLineEvent) getPriority() int8 { return 2 }
+func (t VerticalLineEvent) CompareTo(e SweepEvent) int8 {
+	defaultResult := defaultComp(t, e)
+	if defaultResult != 0 {
+		return defaultResult
+	}
+	verticalEvent := e.(*VerticalLineEvent)
+	indexDif := t.Line.Index - verticalEvent.Line.Index
+
+	return abs(indexDif)
+}
 
 
 
@@ -38,16 +63,66 @@ func (t IntersectionEvent) GetX() float64 {
 }
 func (t IntersectionEvent) getPriority() int8 { return 3 }
 
+func NewIntersectionEvent(intersection Point, lineA, lineB Line) * IntersectionEvent {
+	return &IntersectionEvent{intersection, lineA, lineB}
+}
+func (t IntersectionEvent) CompareTo(e SweepEvent) int8 {
+	defaultResult := defaultComp(t, e)
+	if defaultResult != 0 {
+		return defaultResult
+	}
+	intersectionEvent := e.(*IntersectionEvent)
+	intersecA := t.Intersection
+	intersecB := intersectionEvent.Intersection
+
+	// X should be assumed to be equal already
+	yComp := compFloats(intersecA.Y, intersecB.Y)
+	if yComp != 0 {
+		return yComp
+	}
+
+	indexDif := t.LineA.Index - intersectionEvent.LineA.Index
+	if indexDif != 0 {
+		return abs(indexDif)
+	}
+
+	indexDif = t.LineB.Index - intersectionEvent.LineB.Index
+	return abs(indexDif)
+}
+
 
 
 type LineEndEvent struct {
-	line Line
+	Line Line
 }
 func (t LineEndEvent) GetX() float64 {
-	return t.line.End.X
+	return t.Line.End.X
 }
 func (t LineEndEvent) getPriority() int8 { return 4 }
+func NewLineEndEvent(line Line) * LineEndEvent {
+	return &LineEndEvent{line}
+}
+func (t LineEndEvent) CompareTo(e SweepEvent) int8 {
+	defaultResult := defaultComp(t, e)
+	if defaultResult != 0 {
+		return defaultResult
+	}
+	endEvent := e.(*LineEndEvent)
+	indexDif := t.Line.Index - endEvent.Line.Index
 
+	return abs(indexDif)
+}
+
+
+func abs(x int) int8 {
+	if x < 0 {
+		return -1
+	} else if x > 0 {
+		return 1
+	} else {
+		return 0
+	}
+}
 
 func compFloats(a, b float64) int8 {
 	if a > b {
@@ -59,7 +134,7 @@ func compFloats(a, b float64) int8 {
 	}
 }
 
-func CompEvents(eventA, eventB SweepEvent) int8 {
+func defaultComp(eventA, eventB SweepEvent) int8 {
 	xComp := compFloats(eventA.GetX(), eventB.GetX())
 	if xComp != 0 {
 		return xComp
