@@ -38,22 +38,23 @@ func (t *EventQueue) balance() int8 {
 	return 0
 }
 
-func (t *EventQueue) AssertOrder() {
-	t.Root.assertOrder()
+func (t *EventQueue) AssertOrder() bool{
+	return t.Root.assertOrder()
 }
 
-func (n *Node) assertOrder() {
+func (n *Node) assertOrder() bool{
 	if n == nil {
-		return
+		return true
 	}
 	n.left.assertOrder()
 	n.right.assertOrder()
-	if n.left != nil && n.Value.CompareTo(n.left.Value) != -1 {
-		panic("Bad order")
+	if n.left != nil && n.Value.CompareTo(n.left.Value) != 1 {
+		return false
 	}
-	if n.right != nil && n.Value.CompareTo(n.right.Value) != 1 {
-		panic("Bad order")
+	if n.right != nil && n.Value.CompareTo(n.right.Value) != -1 {
+		return false
 	}
+	return true
 }
 
 // Insert inserts a new value into the tree and returns the tree pointer
@@ -70,27 +71,36 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		*added = true
 		return (&Node{Value: value}).Init()
 	}
-	comp := n.Value.CompareTo(value)
+	comp := value.CompareTo(n.Value)
+	if value.CompareTo(n.Value) * (-1) != n.Value.CompareTo(value) {
+		panic("!!")
+		//aRes := value.CompareTo(n.Value)
+		//bRes := n.Value.CompareTo(value)
+		//_, _ = aRes, bRes
+	}
 	if comp > 0 {
 		n.right = insert(n.right, value, added)
-	} else {
+	} else if comp < 0 {
 		// Points with overlap or to the left of the line are inserted to its left
 		n.left = insert(n.left, value, added)
+	} else {
+		panic("Duplicate event")
 	}
 
+	/*
 	n.height = n.maxHeight() + 1
 	currentBalance := balance(n)
 
 	if currentBalance > 1 {
-		comp := n.left.Value.CompareTo(value)
-		if comp <= 0 {
+		comp := value.CompareTo(n.left.Value)
+		if comp < 0 {
 			return n.rotateRight()
-		} else {
+		} else if comp > 0 {
 			n.left = n.left.rotateLeft()
 			return n.rotateRight()
 		}
 	} else if currentBalance < -1 {
-		comp = n.right.Value.CompareTo(value)
+		comp = value.CompareTo(n.right.Value)
 		if comp > 0 {
 			return n.rotateLeft()
 		} else {
@@ -98,6 +108,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 			return n.rotateLeft()
 		}
 	}
+	*/
 	return n
 }
 
@@ -121,20 +132,20 @@ func (t *EventQueue) Pop() SweepEvent {
 	if t.Root == nil {
 		return nil
 	}
-	if t.Root.right == nil {
+	if t.Root.left == nil {
 		// Pop the Root itself
 		headNode := t.Root
-		t.Root = headNode.left
+		t.Root = headNode.right
 		return headNode.Value
 	}
 	// Find "first" event
 	parentNode := t.Root
-	headNode := t.Root.right
-	for headNode.right != nil {
+	headNode := t.Root.left
+	for headNode.left != nil {
 		parentNode = headNode
-		headNode = headNode.right
+		headNode = headNode.left
 	}
-	parentNode.right = headNode.left
+	parentNode.left = headNode.right
 
 	t.balance() // TODO: test performance without balancing
 	// Note: A tree is probably not the bestt structure for almost always accessing the first member

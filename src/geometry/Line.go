@@ -52,8 +52,32 @@ func (p *Line) IsCrossedBy(q Line) bool {
 	return ccwA * ccwB <= 0
 }
 
-func (p *Line) GetIntersectionWith(q Line) * Point {
-	return nil
+func (p *Line) GetIntersectionWith(q Line, intersection *Point) bool {
+	// "Stolen" from Stackoverflow :)
+	// https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+
+	//char get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,
+	//	float p2_x, float p2_y, float p3_x, float p3_y, float *i_x, float *i_y)
+	//{
+	s0_x := p.End.X - p.Start.X;
+	s0_y := p.End.Y - p.Start.Y;
+	s1_x := q.End.X - q.Start.X;
+	s1_y := q.End.Y - q.Start.Y;
+
+	s := (-s0_y * (p.Start.X - q.Start.X) + s0_x * (p.Start.Y - q.Start.Y)) / (-s1_x * s0_y + s0_x * s1_y);
+	t := ( s1_x * (p.Start.Y - q.Start.Y) - s1_y * (p.Start.X - q.Start.X)) / (-s1_x * s0_y + s0_x * s1_y);
+
+	if s >= 0 && s <= 1 && t >= 0 && t <= 1 {
+		// Collision detected
+		//if (i_x != NULL)
+		//*i_x = p0_x + (t * s0_x);
+		//if (i_y != NULL)
+		//*i_y = p0_y + (t * s0_y);
+		*intersection = Point{p.Start.X + (t * s0_x), p.Start.Y + (t * s0_y)}
+		return true
+	}
+
+	return false // No collision
 }
 
 func (a *Line) isPoint () bool {

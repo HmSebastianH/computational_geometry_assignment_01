@@ -5,7 +5,7 @@ package sweepLine
 // The nodes are also restricted to contain lines.
 
 import (
-"fmt"
+	"fmt"
 	. "geometry"
 )
 
@@ -15,12 +15,11 @@ type SweepLine struct {
 	len  int
 }
 
-
 // Node represents a node in the tree with a value, left and right children, and a height/balance of the node.
 type Node struct {
-	Value       Line
+	Value               Line
 	left, right, parent *Node
-	height      int8
+	height              int8
 }
 
 // New returns a new btree
@@ -52,7 +51,7 @@ func (t *SweepLine) balance() int8 {
 
 // Insert inserts a new value into the tree and returns the tree pointer
 func (t *SweepLine) Insert(value Line) *Node {
-	if value.Start.X != value.End.X {
+	if value.Start.X == value.End.X {
 		panic("Vertical Lines / Points are not supported by the Sweep line")
 	}
 	var insertedNode Node
@@ -61,6 +60,39 @@ func (t *SweepLine) Insert(value Line) *Node {
 		t.len++
 	}
 	return &insertedNode
+}
+
+func (t *SweepLine) Delete(node *Node) bool {
+	return node.deleteSelf()
+}
+
+// Finds and returns the note of a specified line by using its end point for sorting purposes
+func (t *SweepLine) FindWithEndPoint(line Line) *Node {
+	return t.Root.findWithEndPoint(line)
+}
+
+func (n *Node) findWithEndPoint(line Line) *Node {
+	if n == nil {
+		return nil
+	}
+	if n.Value.Index == line.Index {
+		return n
+	}
+	ccw := Ccw(n.Value, line.End)
+	if ccw > 0 {
+		// Search right subtree
+		return n.right.findWithEndPoint(line)
+	} else if ccw > 0 {
+		// Search left sub tree
+		return n.left.findWithEndPoint(line)
+	} else {
+		// There might be multiple lines with the same ccw, go through all of them
+		leftResult := n.left.findWithEndPoint(line)
+		if leftResult != nil {
+			return leftResult
+		}
+		return n.right.findWithEndPoint(line)
+	}
 }
 
 func (n *Node) insert(parent *Node, value Line, insertedNode *Node) *Node {
@@ -191,60 +223,60 @@ func (n *Node) Right() *Node {
 	return nil
 }
 
-func deleteSweepNode(n *Node, value Line, deleted *bool) *Node {
+func (n *Node) replaceChild(prev *Node, new *Node) {
+	if n.left == prev {
+		n.left = new
+	} else if n.right == prev {
+		n.right = new
+	}
+}
+
+func (n *Node) deleteSelf() bool {
 	if n == nil {
-		return n
+		return false
 	}
 
-	c := 1
-
-	if c < 0 {
-		n.left = deleteSweepNode(n.left, value, deleted)
-	} else if c > 0 {
-		n.right = deleteSweepNode(n.right, value, deleted)
-	} else {
-		if n.left == nil {
-			// Replace myself with my right node
-			t := n.right
-			t.parent = n.parent
-			n.Init()
-			return t
-		} else if n.right == nil {
-			// Replace myself with my left node
-			t := n.left
-			t.parent = n.parent
-			n.Init()
-			return t
-		}
-		t := n.right.min()
-		n.Value = t.Value
-		n.right = deleteSweepNode(n.right, t.Value, deleted)
-		*deleted = true
+	if n.left == nil {
+		// Replace myself with my right node
+		t := n.right
+		t.parent = n.parent
+		n.Init()
+		t.parent.replaceChild(n, t)
+		return true
+	} else if n.right == nil {
+		// Replace myself with my left node
+		t := n.left
+		t.parent = n.parent
+		n.Init()
+		t.parent.replaceChild(n, t)
+		return true
 	}
+	t := n.right.min()
+	n.Value = t.Value
+	t.deleteSelf()
 
-	//re-balance
-	if n == nil {
-		return n
-	}
 	n.height = n.maxHeight() + 1
 	bal := balance(n)
 	if bal > 1 {
 		if balance(n.left) >= 0 {
-			return n.rotateRight()
+			n.rotateRight()
+			return true
 		}
 		n.left = n.left.rotateLeft()
-		return n.rotateRight()
+		n.rotateRight()
+		return true
 	} else if bal < -1 {
 		if balance(n.right) <= 0 {
-			return n.rotateLeft()
+			n.rotateLeft()
+			return true
 		}
 		n.right = n.right.rotateRight()
-		return n.rotateLeft()
+		n.rotateLeft()
+		return true
 	}
 
-	return n
+	return true
 }
-
 
 // Init initializes the values of the node or clears the node and returns the node pointer
 func (n *Node) Init() *Node {

@@ -140,8 +140,10 @@ func defaultComp(eventA, eventB SweepEvent) int8 {
 		return xComp
 	}
 	prioComp := eventB.getPriority() - eventA.getPriority()
-	if prioComp != 0 {
-		return prioComp / prioComp
+	if prioComp < 0 {
+		return -1
+	} else if prioComp > 0 {
+		return 1
 	}
 
 	return 0
