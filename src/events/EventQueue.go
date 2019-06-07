@@ -1,19 +1,17 @@
 package events
 
-
 // This package is a adaption of the btree from "github.com/ross-oreto/go-tree"
 // It shares the same balacing features and basic access methods, but it uses a ccv ordering to insert values
 // The nodes are also restricted to contain lines.
 
 import (
-"fmt"
+	"fmt"
 )
 
 // EventQueue represents an AVL tree
 type EventQueue struct {
 	Root *Node
 }
-
 
 // Node represents a node in the tree with a value, left and right children, and a height/balance of the node.
 type Node struct {
@@ -38,11 +36,27 @@ func (t *EventQueue) balance() int8 {
 	return 0
 }
 
-func (t *EventQueue) AssertOrder() bool{
+func (t *EventQueue) PrintOut() {
+	fmt.Print("Events: [")
+	t.Root.printOut()
+	fmt.Println("]")
+
+}
+
+func (n *Node) printOut() {
+	if n == nil {
+		return
+	}
+	n.left.printOut()
+	fmt.Print(n.Value, " ")
+	n.right.printOut()
+}
+
+func (t *EventQueue) AssertOrder() bool {
 	return t.Root.assertOrder()
 }
 
-func (n *Node) assertOrder() bool{
+func (n *Node) assertOrder() bool {
 	if n == nil {
 		return true
 	}
@@ -64,7 +78,6 @@ func (t *EventQueue) Insert(value SweepEvent) *EventQueue {
 	return t
 }
 
-
 func insert(n *Node, value SweepEvent, added *bool) *Node {
 	if n == nil {
 		// If this is a empty leaf insert the line here
@@ -72,7 +85,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		return (&Node{Value: value}).Init()
 	}
 	comp := value.CompareTo(n.Value)
-	if value.CompareTo(n.Value) * (-1) != n.Value.CompareTo(value) {
+	if value.CompareTo(n.Value)*(-1) != n.Value.CompareTo(value) {
 		panic("!!")
 		//aRes := value.CompareTo(n.Value)
 		//bRes := n.Value.CompareTo(value)
@@ -88,30 +101,29 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 	}
 
 	/*
-	n.height = n.maxHeight() + 1
-	currentBalance := balance(n)
+		n.height = n.maxHeight() + 1
+		currentBalance := balance(n)
 
-	if currentBalance > 1 {
-		comp := value.CompareTo(n.left.Value)
-		if comp < 0 {
-			return n.rotateRight()
-		} else if comp > 0 {
-			n.left = n.left.rotateLeft()
-			return n.rotateRight()
+		if currentBalance > 1 {
+			comp := value.CompareTo(n.left.Value)
+			if comp < 0 {
+				return n.rotateRight()
+			} else if comp > 0 {
+				n.left = n.left.rotateLeft()
+				return n.rotateRight()
+			}
+		} else if currentBalance < -1 {
+			comp = value.CompareTo(n.right.Value)
+			if comp > 0 {
+				return n.rotateLeft()
+			} else {
+				n.right = n.right.rotateRight()
+				return n.rotateLeft()
+			}
 		}
-	} else if currentBalance < -1 {
-		comp = value.CompareTo(n.right.Value)
-		if comp > 0 {
-			return n.rotateLeft()
-		} else {
-			n.right = n.right.rotateRight()
-			return n.rotateLeft()
-		}
-	}
 	*/
 	return n
 }
-
 
 // Head returns the first value in the tree
 func (t *EventQueue) Head() *Node {
@@ -151,7 +163,6 @@ func (t *EventQueue) Pop() SweepEvent {
 	// Note: A tree is probably not the bestt structure for almost always accessing the first member
 	return headNode.Value
 }
-
 
 // Init initializes the values of the node or clears the node and returns the node pointer
 func (n *Node) Init() *Node {

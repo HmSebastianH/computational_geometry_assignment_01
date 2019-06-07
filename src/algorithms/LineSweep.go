@@ -49,6 +49,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 	if !eventQueue.AssertOrder() {
 		panic("Sanity check failed")
 	}
+	eventQueue.PrintOut()
 	allIntersections := make([]MatchingIndices, 0)
 
 	sweepLine := NewSweepLine()
@@ -135,6 +136,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 		}
 
 		sweepLine.PrintOut()
+		eventQueue.PrintOut()
 		currentEvent = eventQueue.Pop()
 	}
 

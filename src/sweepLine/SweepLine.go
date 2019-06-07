@@ -48,20 +48,18 @@ func (t *SweepLine) balance() int8 {
 }
 
 func (t *SweepLine) PrintOut() {
-	if t.Root == nil || t.Root.min() == nil {
-		fmt.Println("[]")
+	fmt.Print("Sweep: [")
+	t.Root.printOut()
+	fmt.Println("]")
+}
+
+func (n *Node) printOut() {
+	if n == nil {
 		return
 	}
-	n := t.Root.min()
-	fmt.Print("[", n.Value.Index)
-
-	n = n.Right()
-	for n != nil {
-		fmt.Print(", ", n.Value.Index);
-		n = n.Right()
-	}
-	fmt.Print("]")
-
+	n.left.printOut()
+	fmt.Print(n.Value.Index, " ")
+	n.right.printOut()
 }
 
 // Insert inserts a new value into the tree and returns the tree pointer
@@ -119,12 +117,9 @@ func (n *Node) insert(parent *Node, value Line, nodeToInsert *Node) *Node {
 	ccw := Ccw(n.Value, value.Start)
 	if ccw > 0 {
 		n.right = n.right.insert(n, value, nodeToInsert)
-	} else if ccw > 0 {
+	} else { //if ccw > 0 {
 		// Points with overlap or to the left of the line are inserted to its left
 		n.left = n.left.insert(n, value, nodeToInsert)
-	} else {
-		// TODO: This should be handled in some way
-		//fmt.Println("Overlapping lines")
 	}
 
 	n.height = n.maxHeight() + 1
@@ -208,7 +203,7 @@ func (n *Node) Left() *Node {
 	currentParent := n.parent
 	currentParrentChild := n
 	for currentParent != nil {
-		if currentParrentChild.Value.Index == currentParent.right.Value.Index {
+		if currentParent.right != nil && currentParrentChild.Value.Index == currentParent.right.Value.Index {
 			// We found a path where the tree we came from is on the right, therfore the node is to the left
 			return currentParent
 		}

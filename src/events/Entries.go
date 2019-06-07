@@ -1,6 +1,9 @@
 package events
 
-import . "geometry"
+import (
+	"fmt"
+	. "geometry"
+)
 
 // In general every sweep event is associated with a x point at which it is triggered
 type SweepEvent interface {
@@ -12,6 +15,9 @@ type SweepEvent interface {
 
 type LineStartEvent struct {
 	Line Line
+}
+func (t LineStartEvent) String() string{
+	return fmt.Sprintf("LineStart(%s)", t.Line.String())
 }
 func (t LineStartEvent) GetX() float64 {
 	return t.Line.Start.X
@@ -37,6 +43,9 @@ func (t LineStartEvent) CompareTo(e SweepEvent) int8 {
 type VerticalLineEvent struct {
 	Line Line
 }
+func (t VerticalLineEvent) String() string{
+	return fmt.Sprintf("VerticalLine(%s)", t.Line.String())
+}
 func (t VerticalLineEvent) GetX() float64 {
 	return t.Line.Start.X
 }
@@ -57,6 +66,9 @@ func (t VerticalLineEvent) CompareTo(e SweepEvent) int8 {
 type IntersectionEvent struct {
 	Intersection Point
 	LineA, LineB Line
+}
+func (t IntersectionEvent) String() string{
+	return fmt.Sprintf("IntersectionEvent(%s %d_%d)", t.Intersection.String(), t.LineA.Index, t.LineB.Index)
 }
 func (t IntersectionEvent) GetX() float64 {
 	return t.Intersection.X
@@ -94,6 +106,9 @@ func (t IntersectionEvent) CompareTo(e SweepEvent) int8 {
 
 type LineEndEvent struct {
 	Line Line
+}
+func (t LineEndEvent) String() string{
+	return fmt.Sprintf("LineEnd(%s)", t.Line.String())
 }
 func (t LineEndEvent) GetX() float64 {
 	return t.Line.End.X
@@ -139,7 +154,7 @@ func defaultComp(eventA, eventB SweepEvent) int8 {
 	if xComp != 0 {
 		return xComp
 	}
-	prioComp := eventB.getPriority() - eventA.getPriority()
+	prioComp := eventA.getPriority() - eventB.getPriority()
 	if prioComp < 0 {
 		return -1
 	} else if prioComp > 0 {

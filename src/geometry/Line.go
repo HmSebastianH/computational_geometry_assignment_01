@@ -1,5 +1,7 @@
 package geometry
 
+import "fmt"
+
 type Line struct {
 	Index int
 	Start Point
@@ -15,6 +17,10 @@ func NewLine(index int, p, q Point) *Line {
 		obj.Start, obj.End = q, p
 	}
 	return obj
+}
+
+func (p *Line) String() string {
+	return fmt.Sprintf("%s->%s[%d]", p.Start.String(), p.End.String(), p.Index)
 }
 
 func (p *Line) IsCrossedBy(q Line) bool {
