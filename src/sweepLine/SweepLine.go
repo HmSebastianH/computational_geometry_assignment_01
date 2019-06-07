@@ -63,35 +63,35 @@ func (t *SweepLine) Insert(value Line) *Node {
 }
 
 func (t *SweepLine) Delete(node *Node) bool {
-	return node.deleteSelf()
+	return node.deleteSelf(t) // I know this is ugly
 }
 
 // Finds and returns the note of a specified line by using its end point for sorting purposes
-func (t *SweepLine) FindWithEndPoint(line Line) *Node {
-	return t.Root.findWithEndPoint(line)
+func (t *SweepLine) FindWithReferencePoint(line Line, reference Point) *Node {
+	return t.Root.findWithReferencePoint(line, reference)
 }
 
-func (n *Node) findWithEndPoint(line Line) *Node {
+func (n *Node) findWithReferencePoint(line Line, reference Point) *Node {
 	if n == nil {
 		return nil
 	}
 	if n.Value.Index == line.Index {
 		return n
 	}
-	ccw := Ccw(n.Value, line.End)
+	ccw := Ccw(n.Value, reference)
 	if ccw > 0 {
 		// Search right subtree
-		return n.right.findWithEndPoint(line)
+		return n.right.findWithReferencePoint(line, reference)
 	} else if ccw > 0 {
 		// Search left sub tree
-		return n.left.findWithEndPoint(line)
+		return n.left.findWithReferencePoint(line, reference)
 	} else {
 		// There might be multiple lines with the same ccw, go through all of them
-		leftResult := n.left.findWithEndPoint(line)
+		leftResult := n.left.findWithReferencePoint(line, reference)
 		if leftResult != nil {
 			return leftResult
 		}
-		return n.right.findWithEndPoint(line)
+		return n.right.findWithReferencePoint(line, reference)
 	}
 }
 
@@ -106,9 +106,12 @@ func (n *Node) insert(parent *Node, value Line, insertedNode *Node) *Node {
 	ccw := Ccw(n.Value, value.Start)
 	if ccw > 0 {
 		n.right = n.right.insert(n, value, insertedNode)
-	} else {
+	} else if ccw > 0 {
 		// Points with overlap or to the left of the line are inserted to its left
 		n.left = n.left.insert(n, value, insertedNode)
+	} else {
+		// TODO: This should be handled in some way
+		//fmt.Println("Overlapping lines")
 	}
 
 	n.height = n.maxHeight() + 1
@@ -116,19 +119,23 @@ func (n *Node) insert(parent *Node, value Line, insertedNode *Node) *Node {
 
 	if currentBalance > 1 {
 		ccw = Ccw(n.left.Value, value.Start)
-		if ccw <= 0 {
+		if ccw < 0 {
 			return n.rotateRight()
-		} else {
+		} else if ccw > 0{
 			n.left = n.left.rotateLeft()
 			return n.rotateRight()
+		} else {
+			fmt.Println("TODO")
 		}
 	} else if currentBalance < -1 {
 		ccw = Ccw(n.right.Value, value.Start)
 		if ccw > 0 {
 			return n.rotateLeft()
-		} else {
+		} else if ccw < 0 {
 			n.right = n.right.rotateRight()
 			return n.rotateLeft()
+		} else {
+			fmt.Println("TODO")
 		}
 	}
 	return n
@@ -179,8 +186,11 @@ func (t *SweepLine) Tail() *Line {
 	return nil
 }
 
-// Len return the number of nodes in the tree
+// Left returns the node to its left
 func (n *Node) Left() *Node {
+	if n == nil {
+		return nil
+	}
 	if n.left != nil {
 		return n.left.max()
 	}
@@ -203,6 +213,9 @@ func (n *Node) Left() *Node {
 
 // Len return the number of nodes in the tree
 func (n *Node) Right() *Node {
+	if n == nil {
+		return nil
+	}
 	if n.right != nil {
 		return n.right.min()
 	}
@@ -231,9 +244,19 @@ func (n *Node) replaceChild(prev *Node, new *Node) {
 	}
 }
 
-func (n *Node) deleteSelf() bool {
+func (n *Node) deleteSelf(sweepLine *SweepLine) bool {
 	if n == nil {
 		return false
+	}
+
+	if n.left == nil && n.right == nil {
+		if n.parent != nil {
+			n.parent.replaceChild(n, nil)
+		} else {
+			sweepLine.Root = nil
+		}
+		n.Init()
+		return true
 	}
 
 	if n.left == nil {
@@ -241,19 +264,27 @@ func (n *Node) deleteSelf() bool {
 		t := n.right
 		t.parent = n.parent
 		n.Init()
-		t.parent.replaceChild(n, t)
+		if n.parent == nil {
+			sweepLine.Root = t
+		} else {
+			t.parent.replaceChild(n, t)
+		}
 		return true
 	} else if n.right == nil {
 		// Replace myself with my left node
 		t := n.left
 		t.parent = n.parent
 		n.Init()
-		t.parent.replaceChild(n, t)
+		if n.parent == nil {
+			sweepLine.Root = t
+		} else {
+			t.parent.replaceChild(n, t)
+		}
 		return true
 	}
 	t := n.right.min()
 	n.Value = t.Value
-	t.deleteSelf()
+	t.deleteSelf(sweepLine)
 
 	n.height = n.maxHeight() + 1
 	bal := balance(n)
@@ -327,7 +358,14 @@ func balance(n *Node) int8 {
 }
 
 func (n *Node) rotateRight() *Node {
+	if n == nil {
+		return n
+	}
 	l := n.left
+	if l == nil {
+		// TODO: make sure there are no rotations which lead to this
+		return n
+	}
 	// Rotation
 	l.right, n.left = n, l.right
 

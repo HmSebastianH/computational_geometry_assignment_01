@@ -64,6 +64,9 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				// Loop condition should be that the ccw changed
 				if leftNode != nil {
 					var intersection Point
+					if event.Line.IsCrossedBy(leftNode.Value) {
+						println("Intersec!")
+					}
 					if event.Line.GetIntersectionWith(leftNode.Value, &intersection) {
 						// TODO: If intersection is a overlap, do not insert a Event
 						eventQueue.Insert(events.NewIntersectionEvent(intersection, event.Line, leftNode.Value))
@@ -72,6 +75,9 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				rightNode := insertedNode.Left()
 				if rightNode != nil {
 					var intersection Point
+					if event.Line.IsCrossedBy(rightNode.Value) {
+						println("Intersec!")
+					}
 					if event.Line.GetIntersectionWith(rightNode.Value, &intersection) {
 						eventQueue.Insert(events.NewIntersectionEvent(intersection, event.Line, rightNode.Value))
 					}
@@ -84,12 +90,16 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				//   3. delete node
 				// Get -> Right neighbor, check against left neighbor
 				event := currentEvent.(*events.LineEndEvent)
-				lineNode := sweepLine.FindWithEndPoint(event.Line)
+				lineNode := sweepLine.FindWithReferencePoint(event.Line, event.Line.End)
 
+				// TODO: LineNode can be nil, it should never be nil because we have lines to delete
 				leftNode := lineNode.Left()
 				rightNode := lineNode.Right()
 				if leftNode != nil && rightNode != nil {
 					var intersection Point
+					if leftNode.Value.IsCrossedBy(rightNode.Value) {
+						println("Intersec!")
+					}
 					if leftNode.Value.GetIntersectionWith(rightNode.Value, &intersection) {
 						eventQueue.Insert(events.NewIntersectionEvent(intersection, leftNode.Value, rightNode.Value))
 					}
@@ -108,8 +118,13 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			case *events.IntersectionEvent:
 				event := currentEvent.(*events.IntersectionEvent)
 				var _ = event
-				allIntersections =
-					append(allIntersections, MatchingIndices{event.LineA.Index, event.LineB.Index})
+				allIntersections = append(allIntersections, MatchingIndices{event.LineA.Index, event.LineB.Index})
+
+				nodeA := sweepLine.FindWithReferencePoint(event.LineA, event.Intersection)
+				nodeB := sweepLine.FindWithReferencePoint(event.LineA, event.Intersection)
+
+				nodeA.Value, nodeB.Value = nodeB.Value, nodeA.Value
+
 				// TODO:
 				//  1. Find all Intersection events on the same spot
 				//  2. Reverse the order of all lines affected

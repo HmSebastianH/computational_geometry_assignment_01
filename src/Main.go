@@ -27,10 +27,10 @@ func check(e error) {
 func main() {
 
 	startTime := time.Now()
-	inputFile, err := os.Open("data/s_10000_1.dat")
+	inputFile, err := os.Open("data/s_100000_1.dat")
 	check(err)
 
-	outputFile, err := os.Create("data/result_10000_s.dat")
+	outputFile, err := os.Create("data/result_100000_s.dat")
 	check(err)
 
 	defer inputFile.Close()
