@@ -12,7 +12,6 @@ import (
 // Btree represents an AVL tree
 type SweepLine struct {
 	Root *Node
-	len  int
 }
 
 // Node represents a node in the tree with a value, left and right children, and a height/balance of the node.
@@ -28,7 +27,6 @@ func NewSweepLine() *SweepLine { return new(SweepLine).Init() }
 // Init initializes all values/clears the tree and returns the tree pointer
 func (t *SweepLine) Init() *SweepLine {
 	t.Root = nil
-	t.len = 0
 	return t
 }
 
@@ -49,17 +47,33 @@ func (t *SweepLine) balance() int8 {
 	return 0
 }
 
+func (t *SweepLine) PrintOut() {
+	if t.Root == nil || t.Root.min() == nil {
+		fmt.Println("[]")
+		return
+	}
+	n := t.Root.min()
+	fmt.Print("[", n.Value.Index)
+
+	n = n.Right()
+	for n != nil {
+		fmt.Print(", ", n.Value.Index);
+		n = n.Right()
+	}
+	fmt.Print("]")
+
+}
+
 // Insert inserts a new value into the tree and returns the tree pointer
 func (t *SweepLine) Insert(value Line) *Node {
 	if value.Start.X == value.End.X {
 		panic("Vertical Lines / Points are not supported by the Sweep line")
 	}
-	var insertedNode Node
-	t.Root = t.Root.insert(nil, value, &insertedNode)
-	if insertedNode.parent != nil {
-		t.len++
-	}
-	return &insertedNode
+	nodeToInsert := &Node{}
+	nodeToInsert.Init()
+	t.Root = t.Root.insert(nil, value, nodeToInsert)
+
+	return nodeToInsert
 }
 
 func (t *SweepLine) Delete(node *Node) bool {
@@ -95,20 +109,19 @@ func (n *Node) findWithReferencePoint(line Line, reference Point) *Node {
 	}
 }
 
-func (n *Node) insert(parent *Node, value Line, insertedNode *Node) *Node {
+func (n *Node) insert(parent *Node, value Line, nodeToInsert *Node) *Node {
 	if n == nil {
 		// If this is a empty leaf insert the line here
-		newNode := Node{Value: value}
-		newNode.Init().setParent(parent)
-		insertedNode = &newNode
+		nodeToInsert.Value = value
+		nodeToInsert.setParent(parent)
 		return (&Node{Value: value}).Init().setParent(parent)
 	}
 	ccw := Ccw(n.Value, value.Start)
 	if ccw > 0 {
-		n.right = n.right.insert(n, value, insertedNode)
+		n.right = n.right.insert(n, value, nodeToInsert)
 	} else if ccw > 0 {
 		// Points with overlap or to the left of the line are inserted to its left
-		n.left = n.left.insert(n, value, insertedNode)
+		n.left = n.left.insert(n, value, nodeToInsert)
 	} else {
 		// TODO: This should be handled in some way
 		//fmt.Println("Overlapping lines")
@@ -141,10 +154,6 @@ func (n *Node) insert(parent *Node, value Line, insertedNode *Node) *Node {
 	return n
 }
 
-// Len return the number of nodes in the tree
-func (t *SweepLine) Len() int {
-	return t.len
-}
 
 // Head returns the first value in the tree
 func (t *SweepLine) Head() *Line {
@@ -199,7 +208,7 @@ func (n *Node) Left() *Node {
 	currentParent := n.parent
 	currentParrentChild := n
 	for currentParent != nil {
-		if currentParrentChild == currentParent.right {
+		if currentParrentChild.Value.Index == currentParent.right.Value.Index {
 			// We found a path where the tree we came from is on the right, therfore the node is to the left
 			return currentParent
 		}
@@ -207,7 +216,7 @@ func (n *Node) Left() *Node {
 		currentParent = currentParent.parent
 	}
 
-	// If nothing matched for now, this is the last node in the tree
+	// If nothing matched by now, this is the last node in the tree
 	return nil
 }
 
@@ -224,8 +233,8 @@ func (n *Node) Right() *Node {
 	currentParent := n.parent
 	currentParrentChild := n
 	for currentParent != nil {
-		if currentParrentChild == currentParent.left {
-			// We found a path where the tree we came from is on the left, therfore the node is to the right
+		if currentParrentChild.left != nil && currentParrentChild.Value.Index == currentParent.left.Value.Index {
+			// We found a path where the tree we came from is on the left, therefore the node is to the right
 			return currentParent
 		}
 		currentParrentChild = currentParent

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestLineSweepWithSimpleIntersection(t *testing.T) {
+func TestLineSweepWithSimpleIntersection_1(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 1, 0, 4, 2)
@@ -16,7 +16,7 @@ func TestLineSweepWithSimpleIntersection(t *testing.T) {
 	checkIfResultContains(t, intersections, 0, 1)
 }
 
-func TestLineSweepWithNoIntersection(t *testing.T) {
+func TestLineSweepWithNoIntersection_2(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 1, 3, 3, 1)
@@ -26,7 +26,7 @@ func TestLineSweepWithNoIntersection(t *testing.T) {
 	checkResultSize(t, intersections, 0)
 }
 
-func TestLineSweepWithTripleIntersection(t *testing.T) {
+func TestLineSweepWithTripleIntersection_3(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 1, 2, 5, 2)
@@ -42,7 +42,7 @@ func TestLineSweepWithTripleIntersection(t *testing.T) {
 	checkIfResultContains(t, intersections, 1, 3)
 }
 
-func TestLineSweepWithVerticalOverlap(t *testing.T) {
+func TestLineSweepWithVerticalOverlap_4(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 2, 1, 2, 3)
@@ -53,7 +53,7 @@ func TestLineSweepWithVerticalOverlap(t *testing.T) {
 	checkIfResultContains(t, intersections, 0, 1)
 }
 
-func TestLineSweepWithPointOnLine(t *testing.T) {
+func TestLineSweepWithPointOnLine_5(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 2, 2, 5, 2)
@@ -64,7 +64,7 @@ func TestLineSweepWithPointOnLine(t *testing.T) {
 	checkIfResultContains(t, intersections, 0, 1)
 }
 
-func TestLineSweepWithEndToStartIntersection(t *testing.T) {
+func TestLineSweepWithEndToStartIntersection_6(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 2, 2, 4, 2)
@@ -75,7 +75,7 @@ func TestLineSweepWithEndToStartIntersection(t *testing.T) {
 	checkIfResultContains(t, intersections, 0, 1)
 }
 
-func TestLineSweepWithMultipleDifferentIntersections(t *testing.T) {
+func TestLineSweepWithMultipleDifferentIntersections_7(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 1, 1, 5, 3)
@@ -90,7 +90,7 @@ func TestLineSweepWithMultipleDifferentIntersections(t *testing.T) {
 	checkIfResultContains(t, intersections, 0, 3)
 }
 
-func TestLineSweepWithOverLapAndIntersection(t *testing.T) {
+func TestLineSweepWithOverLapAndIntersection_8(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 1, 2, 4, 2)
@@ -104,7 +104,7 @@ func TestLineSweepWithOverLapAndIntersection(t *testing.T) {
 	checkIfResultContains(t, intersections, 1, 2)
 }
 
-func TestLineSweepWithQuadIntersection(t *testing.T) {
+func TestLineSweepWithQuadIntersection_9(t *testing.T) {
 	lineId := 0
 	var data []*Line
 	data = appendLine(data, &lineId, 1, 4, 3, 0)
@@ -136,6 +136,7 @@ func appendLine(data []*Line, id *int, x0, y0, x1, y1 float64) []*Line{
 }
 
 func checkResultSize(t *testing.T, result []MatchingIndices, expected int) {
+	logResultContent(t, result)
 	if len(result) != expected {
 		t.Errorf("Unexpected ammount of intersections found, expected %d but was %d",
 			expected, len(result))
@@ -150,4 +151,10 @@ func checkIfResultContains(t *testing.T, result []MatchingIndices, indexA, index
 		}
 	}
 	t.Errorf("Result slice did not contain the result %d_%d", indexA, indexB)
+}
+
+func logResultContent(t *testing.T, result []MatchingIndices) {
+	for _,r := range result {
+		t.Log("Result:", r.IndexA, r.IndexB)
+	}
 }

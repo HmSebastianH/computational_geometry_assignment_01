@@ -72,7 +72,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 						eventQueue.Insert(events.NewIntersectionEvent(intersection, event.Line, leftNode.Value))
 					}
 				}
-				rightNode := insertedNode.Left()
+				rightNode := insertedNode.Right()
 				if rightNode != nil {
 					var intersection Point
 					if event.Line.IsCrossedBy(rightNode.Value) {
@@ -118,7 +118,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			case *events.IntersectionEvent:
 				event := currentEvent.(*events.IntersectionEvent)
 				var _ = event
-				allIntersections = append(allIntersections, MatchingIndices{event.LineA.Index, event.LineB.Index})
+				allIntersections = append(allIntersections, *NewMatchingIndices(event.LineA.Index, event.LineB.Index))
 
 				nodeA := sweepLine.FindWithReferencePoint(event.LineA, event.Intersection)
 				nodeB := sweepLine.FindWithReferencePoint(event.LineA, event.Intersection)
@@ -134,6 +134,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				panic("Unknown event")
 		}
 
+		sweepLine.PrintOut()
 		currentEvent = eventQueue.Pop()
 	}
 
