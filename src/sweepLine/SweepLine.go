@@ -112,7 +112,7 @@ func (n *Node) insert(parent *Node, value Line, nodeToInsert *Node) *Node {
 		// If this is a empty leaf insert the line here
 		nodeToInsert.Value = value
 		nodeToInsert.setParent(parent)
-		return (&Node{Value: value}).Init().setParent(parent)
+		return nodeToInsert
 	}
 	ccw := Ccw(n.Value, value.Start)
 	if ccw > 0 {
@@ -228,7 +228,7 @@ func (n *Node) Right() *Node {
 	currentParent := n.parent
 	currentParrentChild := n
 	for currentParent != nil {
-		if currentParrentChild.left != nil && currentParrentChild.Value.Index == currentParent.left.Value.Index {
+		if currentParent.left != nil && currentParrentChild.Value.Index == currentParent.left.Value.Index {
 			// We found a path where the tree we came from is on the left, therefore the node is to the right
 			return currentParent
 		}
