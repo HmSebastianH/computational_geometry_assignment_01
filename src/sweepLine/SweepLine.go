@@ -79,31 +79,31 @@ func (t *SweepLine) Delete(node *Node) bool {
 }
 
 // Finds and returns the note of a specified line by using its end point for sorting purposes
-func (t *SweepLine) FindWithReferencePoint(line Line, reference Point) *Node {
-	return t.Root.findWithReferencePoint(line, reference)
+func (t *SweepLine) FindWithReferencePoint(lineId int, reference Point) *Node {
+	return t.Root.findWithReferencePoint(lineId, reference)
 }
 
-func (n *Node) findWithReferencePoint(line Line, reference Point) *Node {
+func (n *Node) findWithReferencePoint(lineId int, reference Point) *Node {
 	if n == nil {
 		return nil
 	}
-	if n.Value.Index == line.Index {
+	if n.Value.Index == lineId {
 		return n
 	}
 	ccw := Ccw(n.Value, reference)
 	if ccw > 0 {
 		// Search right subtree
-		return n.right.findWithReferencePoint(line, reference)
+		return n.right.findWithReferencePoint(lineId, reference)
 	} else if ccw > 0 {
 		// Search left sub tree
-		return n.left.findWithReferencePoint(line, reference)
+		return n.left.findWithReferencePoint(lineId, reference)
 	} else {
 		// There might be multiple lines with the same ccw, go through all of them
-		leftResult := n.left.findWithReferencePoint(line, reference)
+		leftResult := n.left.findWithReferencePoint(lineId, reference)
 		if leftResult != nil {
 			return leftResult
 		}
-		return n.right.findWithReferencePoint(line, reference)
+		return n.right.findWithReferencePoint(lineId, reference)
 	}
 }
 

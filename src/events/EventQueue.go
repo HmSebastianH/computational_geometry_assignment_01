@@ -75,6 +75,7 @@ func (n *Node) assertOrder() bool {
 func (t *EventQueue) Insert(value SweepEvent) *EventQueue {
 	added := false
 	t.Root = insert(t.Root, value, &added)
+	t.AssertOrder()
 	return t
 }
 
@@ -97,31 +98,33 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		// Points with overlap or to the left of the line are inserted to its left
 		n.left = insert(n.left, value, added)
 	} else {
-		panic("Duplicate event")
+		// TODO: This is because intersections can be detected multiple times
+		fmt.Println("Warning: Duplicate Event") // This is not a warning, we could just replace it
 	}
 
+	n.height = n.maxHeight() + 1
 	/*
-		n.height = n.maxHeight() + 1
-		currentBalance := balance(n)
+	// TODO: Replace this with a non tree datastructure
+	currentBalance := balance(n)
 
-		if currentBalance > 1 {
-			comp := value.CompareTo(n.left.Value)
-			if comp < 0 {
-				return n.rotateRight()
-			} else if comp > 0 {
-				n.left = n.left.rotateLeft()
-				return n.rotateRight()
-			}
-		} else if currentBalance < -1 {
-			comp = value.CompareTo(n.right.Value)
-			if comp > 0 {
-				return n.rotateLeft()
-			} else {
-				n.right = n.right.rotateRight()
-				return n.rotateLeft()
-			}
+	if currentBalance > 1 {
+		comp := value.CompareTo(n.left.Value)
+		if comp < 0 {
+			return n.rotateRight()
+		} else if comp > 0 {
+			n.left = n.left.rotateLeft()
+			return n.rotateRight()
 		}
-	*/
+	} else if currentBalance < -1 {
+		comp = value.CompareTo(n.right.Value)
+		if comp > 0 {
+			return n.rotateLeft()
+		} else {
+			n.right = n.right.rotateRight()
+			return n.rotateLeft()
+		}
+	}*/
+
 	return n
 }
 
@@ -130,14 +133,11 @@ func (t *EventQueue) Head() *Node {
 	if t.Root == nil {
 		return nil
 	}
-	var beginning = t.Root
-	for beginning.left != nil {
-		beginning = beginning.left
+	n := t.Root
+	for n.left != nil {
+		n = n.left
 	}
-	if beginning != nil {
-		return beginning
-	}
-	return nil
+	return n
 }
 
 func (t *EventQueue) Pop() SweepEvent {
