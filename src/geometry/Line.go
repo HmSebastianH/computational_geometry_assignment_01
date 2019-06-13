@@ -11,7 +11,15 @@ type Line struct {
 func NewLine(index int, p, q Point) *Line {
 	obj := new(Line)
 	obj.Index = index
-	if (p.X <= q.X) {
+	if (p.X == q.X) {
+		// Vertical lines should go from top to bottom
+		if p.Y < q.Y {
+			obj.Start, obj.End = q, p
+		} else {
+			obj.Start, obj.End = p, q
+		}
+
+	} else if (p.X <= q.X) {
 		obj.Start, obj.End = p, q
 	} else {
 		obj.Start, obj.End = q, p

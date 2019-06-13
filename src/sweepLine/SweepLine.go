@@ -86,6 +86,39 @@ func (t *SweepLine) FindWithReferencePoint(lineId int, reference Point) *Node {
 	return t.Root.findWithReferencePoint(lineId, reference)
 }
 
+func (t* SweepLine) FindVerticalIntersections(line Line) []MatchingIndices {
+	return t.Root.findVerticalIntersections(line)
+}
+
+func (n *Node) findVerticalIntersections(line Line) []MatchingIndices {
+	result := make([]MatchingIndices, 0)
+	if n == nil {
+		return result
+	}
+
+	startCcw := Ccw(n.Value, line.Start)
+	if math.Abs(startCcw) < epsilon {
+		// The line is directly on the start, this means we have to check left and right for more
+		result = append(result, n.left.findVerticalIntersections(line)...)
+		result = append(result, n.right.findVerticalIntersections(line)...)
+		result = append(result, *NewMatchingIndices(line.Index, n.Value.Index))
+		return result
+	} else if startCcw < 0 {
+		// The line starts to my left ("above")
+		// Check for intersections with above lines
+		result = append(result, n.left.findVerticalIntersections(line)...)
+		endCcw := Ccw(n.Value, line.End)
+		if endCcw >= 0 {
+			result = append(result, n.right.findVerticalIntersections(line)...)
+			result = append(result, *NewMatchingIndices(line.Index, n.Value.Index))
+		}
+		return result
+	} else { // startCCw > 0
+		// This line does not intersect but lines to its right might
+		return n.right.findVerticalIntersections(line)
+	}
+}
+
 func (n *Node) findWithReferencePoint(lineId int, reference Point) *Node {
 	if n == nil {
 		return nil

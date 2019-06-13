@@ -60,6 +60,9 @@ func (t VerticalLineEvent) CompareTo(e SweepEvent) int8 {
 
 	return abs(indexDif)
 }
+func NewVerticalLineEvent(line Line) * VerticalLineEvent {
+	return &VerticalLineEvent{line}
+}
 
 
 

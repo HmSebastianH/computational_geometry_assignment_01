@@ -28,14 +28,10 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 	for _, line := range allLines {
 		if line.Start.X != line.End.X {
 			eventQueue.Insert(events.NewLineStartEvent(*line))
-			eventQueue.Insert(events.NewLineEndEvent(*line))
 		} else {
-			fmt.Print(".")
+			eventQueue.Insert(events.NewVerticalLineEvent(*line))
 		}
-		// TODO: it might be cheaper to insert the end event at the insert event,
-		// because at that point the event tree will probably be smaller
 	}
-	fmt.Println();
 
 	if !eventQueue.AssertOrder() {
 		panic("Sanity check failed")
@@ -50,6 +46,8 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 		switch currentEvent.(type) {
 		case *events.LineStartEvent:
 			event := currentEvent.(*events.LineStartEvent)
+			// Add the line end event now too, this is done later for performance reasons
+			eventQueue.Insert(events.NewLineEndEvent(event.Line))
 			insertedNode := sweepLine.Insert(event.Line)
 			checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
 				return n.Left()
@@ -69,6 +67,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			// and all nodes to the right of the deleted node which have the same endpoint ccw
 			// Check for intersections in the opposing direction for all those nodes.
 			// TODO: delete the node before doing these checks
+			// TODO: for complete coverage the check method should be used to cover more casses
 			leftNode := lineNode.Left()
 			rightNode := lineNode.Right()
 			if leftNode != nil && rightNode != nil {
@@ -84,16 +83,40 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			sweepLine.Delete(lineNode)
 		case *events.VerticalLineEvent:
 			event := currentEvent.(*events.VerticalLineEvent)
-			var _ = event
 			// TODO:
 			//  1. Collect all Vertical Line events together
 			//  2. Sort them by y to compare to each other (look for overlaps)
 			//  3. Check if ccw of start and end are different for any lines in the sweep line
 			//  ! Do not add any of these lines to the sweep line
+			nextEvent := eventQueue.Head()
+			nVerticalLines := []Line{event.Line}
+			for nextEvent != nil {
+				additionalEvent, ok := nextEvent.Value.(*events.VerticalLineEvent)
+				if ok && additionalEvent.GetX() == event.GetX() {
+					// Gather all Vertical Line events on the same X-Line
+					nVerticalLines = append(nVerticalLines, additionalEvent.Line)
+					eventQueue.Pop()
+					nextEvent = eventQueue.Head()
+				} else {
+					break
+				}
+			}
+
+			for iLine,vLine := range nVerticalLines {
+				// First check the line against the remaining other vertical lines
+				for _,other := range nVerticalLines[iLine+1:] {
+					if vLine.IsCrossedBy(other) {
+						allIntersections = append(allIntersections, *NewMatchingIndices(vLine.Index, other.Index))
+					}
+				}
+				// Then search for vertical overlaps
+				verticalMatches := sweepLine.FindVerticalIntersections(vLine)
+				allIntersections = append(allIntersections, verticalMatches...)
+			}
+
 
 		case *events.IntersectionEvent:
 			event := currentEvent.(*events.IntersectionEvent)
-			var _ = event
 			allIntersections = append(allIntersections, *NewMatchingIndices(event.LineA.Index, event.LineB.Index))
 
 			involvedIds := make(map[int]struct{}) // alias a Set of ints
