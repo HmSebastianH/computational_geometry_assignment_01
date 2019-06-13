@@ -93,12 +93,22 @@ func (t IntersectionEvent) CompareTo(e SweepEvent) int8 {
 		return yComp
 	}
 
-	indexDif := t.LineA.Index - intersectionEvent.LineA.Index
+	indexA1, indexB1 := t.LineA.Index, t.LineB.Index
+	indexA2, indexB2 := intersectionEvent.LineA.Index, intersectionEvent.LineB.Index
+	if indexA1 < indexB1 {
+		indexA1, indexB1 = indexB1, indexA1
+	}
+
+	if indexA2 < indexB2 {
+		indexA2, indexB2 = indexB2, indexA2
+	}
+
+	indexDif := indexA1 - indexA2
 	if indexDif != 0 {
 		return abs(indexDif)
 	}
 
-	indexDif = t.LineB.Index - intersectionEvent.LineB.Index
+	indexDif = indexB1 - indexB2
 	return abs(indexDif)
 }
 

@@ -65,6 +65,10 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				panic("Invalid sweep line state")
 			}
 
+			// Gather all nodes to the left of the deleted node which have the same endpoint ccw (read: same direction)
+			// and all nodes to the right of the deleted node which have the same endpoint ccw
+			// Check for intersections in the opposing direction for all those nodes.
+			// TODO: delete the node before doing these checks
 			leftNode := lineNode.Left()
 			rightNode := lineNode.Right()
 			if leftNode != nil && rightNode != nil {
@@ -111,8 +115,19 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 					break
 				}
 			}
-			reverseLineOrder(event.Intersection, involvedIds, sweepLine)
+			affectedNodes := reverseLineOrder(event.Intersection, involvedIds, sweepLine)
 
+			if affectedNodes != nil && len(affectedNodes) > 0{
+				// TODO: The checks might have to be repeated for lines with the same ccw as the outer nodes
+				leftMostNode := affectedNodes[0]
+				checkNeighboringIntersections(leftMostNode, event.GetX(), eventQueue, func(n *Node) *Node {
+					return n.Left()
+				})
+				rightMostNode := affectedNodes[len(affectedNodes) - 1]
+				checkNeighboringIntersections(rightMostNode, event.GetX(), eventQueue, func(n *Node) *Node {
+					return n.Right()
+				})
+			}
 		default:
 			panic("Unknown event")
 		}
@@ -131,7 +146,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 // It receives a set of all affected line ids, which can then be collected from the sweep line itself.
 // The nodes which contain those affected lines will then be reversed in their order.
 // To calculate the desired order the ccw of the line endpoint is used.
-func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *SweepLine) {
+func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *SweepLine) []*Node {
 	// Assumptions made about the sweep line state:
 	// - All Ids are contained in the sweep line
 	// - All Ids contained in the lineIds are neighbouring each other
@@ -139,12 +154,17 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 	// If theses assumptions are not met the function will fail
 	if len(lineIds) < 2 {
 		// Nothing to do here here
-		return
+		return nil
+	}
+
+	idsToFind := make(map[int]struct{}, len(lineIds))
+	for id := range lineIds {
+		idsToFind[id] = struct{}{}
 	}
 
 	// Search for one of the lines using the lineId and intersection
 	referenceId := -1
-	for lineId := range lineIds {
+	for lineId := range idsToFind {
 		// Get a arbitrary id from the contained ids
 		referenceId = lineId
 		break
@@ -156,37 +176,37 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 		panic("Invalid SweepLine state")
 	}
 	// Start building a slice off ordered nodes
-	affectedNodes := make([]*Node, 0, len(lineIds))
+	affectedNodes := make([]*Node, 0, len(idsToFind))
 	affectedNodes = append(affectedNodes, referenceNode)
-	delete(lineIds, referenceId)
+	delete(idsToFind, referenceId)
 
 	// Add all items to the "left" of the reference Node
 	leftNeighbor := referenceNode.Left()
 	for leftNeighbor != nil {
-		_, ok := lineIds[leftNeighbor.Value.Index]
+		_, ok := idsToFind[leftNeighbor.Value.Index]
 		if !ok { // Not one of the affected line group anymore
 			break
 		}
 		// We found one more affected line, prepend it
 		affectedNodes = append([]*Node{leftNeighbor}, affectedNodes...)
-		delete(lineIds, leftNeighbor.Value.Index)
+		delete(idsToFind, leftNeighbor.Value.Index)
 		leftNeighbor = leftNeighbor.Left()
 	}
 
 	// Repeat the same with right neighbors
 	rightNeighbor := referenceNode.Right()
 	for rightNeighbor != nil {
-		_, ok := lineIds[rightNeighbor.Value.Index]
+		_, ok := idsToFind[rightNeighbor.Value.Index]
 		if !ok { // Not one of the affected line group anymore
 			break
 		}
 		affectedNodes = append(affectedNodes, rightNeighbor)
-		delete(lineIds, rightNeighbor.Value.Index)
+		delete(idsToFind, rightNeighbor.Value.Index)
 		rightNeighbor = rightNeighbor.Right()
 	}
 
 	// Make sure all assumptions were met
-	if len(lineIds) != 0 {
+	if len(idsToFind) != 0 {
 		panic("Bad Line Sweep structure")
 	}
 
@@ -195,6 +215,7 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 		n := affectedNodes[i]
 		n.Value = l
 	}
+	return affectedNodes
 }
 
 // This function is called for a node which was just inserted into the sweep line.

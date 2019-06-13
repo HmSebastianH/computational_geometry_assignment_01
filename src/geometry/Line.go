@@ -65,6 +65,7 @@ func (p *Line) GetIntersectionWith(q Line, intersection *Point) bool {
 	//char get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,
 	//	float p2_x, float p2_y, float p3_x, float p3_y, float *i_x, float *i_y)
 	//{
+	fmt.Print("Checking", p.Index, "x", q.Index)
 	s0_x := p.End.X - p.Start.X;
 	s0_y := p.End.Y - p.Start.Y;
 	s1_x := q.End.X - q.Start.X;
@@ -80,9 +81,11 @@ func (p *Line) GetIntersectionWith(q Line, intersection *Point) bool {
 		//if (i_y != NULL)
 		//*i_y = p0_y + (t * s0_y);
 		*intersection = Point{p.Start.X + (t * s0_x), p.Start.Y + (t * s0_y)}
+		fmt.Println("X")
 		return true
 	}
 
+	fmt.Println("_")
 	return false // No collision
 }
 
