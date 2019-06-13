@@ -51,29 +51,12 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 		case *events.LineStartEvent:
 			event := currentEvent.(*events.LineStartEvent)
 			insertedNode := sweepLine.Insert(event.Line)
-			leftNode := insertedNode.Left()
-			for leftNode != nil {
-				var intersection Point
-				if event.Line.GetIntersectionWith(leftNode.Value, &intersection) && intersection.X >= event.GetX() {
-					// TODO: Update the function to properly differentiate between overlaps / intersections
-					eventQueue.Insert(events.NewIntersectionEvent(intersection, event.Line, leftNode.Value))
-				} else {
-					break
-				}
-				leftNode = leftNode.Left()
-			}
-			rightNode := insertedNode.Right()
-			for rightNode != nil {
-				var intersection Point
-				if event.Line.GetIntersectionWith(rightNode.Value, &intersection) && intersection.X >= event.GetX() {
-					// TODO: Update the function to properly differentiate between overlaps / intersections
-					eventQueue.Insert(events.NewIntersectionEvent(intersection, event.Line, rightNode.Value))
-				} else {
-					break
-				}
-				rightNode = rightNode.Right()
-			}
-
+			checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
+				return n.Left()
+			})
+			checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
+				return n.Right()
+			})
 		case *events.LineEndEvent:
 			// Get -> Right neighbor, check against left neighbor
 			event := currentEvent.(*events.LineEndEvent)
@@ -211,6 +194,42 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 	for i,l := range newOrder {
 		n := affectedNodes[i]
 		n.Value = l
+	}
+}
+
+// This function is called for a node which was just inserted into the sweep line.
+// It is checked for intersections against:
+// - Lines directly above
+// - Lines above lines with intersections (or above a ccw which had intersections)
+// - Lines with the same endpoint ccw as the lines described above
+// The same checks are done for lines directly below the inserted line
+func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *events.EventQueue, iterFunc func(*Node) *Node) {
+	leftN := iterFunc(n)
+	ccwHadIntersec := true
+	previousEndPoint := n.Value.End
+	for leftN != nil {
+		currentCcw := Ccw(leftN.Value, previousEndPoint)
+		if currentCcw != 0 {
+			if ccwHadIntersec {
+				// We operate on a new ccw now
+				ccwHadIntersec = false
+			} else {
+				// We found a ccw which does not contain any intersections
+				break
+			}
+		}
+		// Do the actual intersection check
+		var intersection Point
+		if leftN.Value.GetIntersectionWith(n.Value, &intersection){
+			// TODO: Add a flag for overlap events to avoid any swapping for them
+			if intersection.X >= xThresh {
+				eventQueue.Insert(events.NewIntersectionEvent(intersection, leftN.Value, n.Value))
+			}
+			ccwHadIntersec = true
+		}
+		// Prep data for next iteration
+		previousEndPoint = leftN.Value.End
+		leftN = iterFunc(leftN)
 	}
 }
 
