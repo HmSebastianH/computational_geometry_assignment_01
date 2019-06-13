@@ -37,12 +37,6 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 	}
 	fmt.Println();
 
-	// TODO Next: Comp von events anpassen:
-	//  - intersection points an der gleichen stelle müssen nach einander kommen
-	//  - Bei anderen events soll line id für eindeutige ordnung verwendet werden
-	//  -> Delete anpassen das es die richtige linie findet (CCW auf linien end punkt, sobald ccw = 0 id suche)
-
-	// TODO: This panics
 	if !eventQueue.AssertOrder() {
 		panic("Sanity check failed")
 	}
@@ -81,15 +75,13 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			}
 
 		case *events.LineEndEvent:
-			// TODO:
-			//   1. Find the node to be deleted
-			//   2. Do same checks as on insertion with left / right neighbrors
-			//   3. delete node
 			// Get -> Right neighbor, check against left neighbor
 			event := currentEvent.(*events.LineEndEvent)
 			lineNode := sweepLine.FindWithReferencePoint(event.Line.Index, event.Line.End)
+			if lineNode == nil {
+				panic("Invalid sweep line state")
+			}
 
-			// TODO: LineNode can be nil, it should never be nil because we have lines to delete
 			leftNode := lineNode.Left()
 			rightNode := lineNode.Right()
 			if leftNode != nil && rightNode != nil {
@@ -177,6 +169,7 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 	// TODO: This function might return nil currently
 	referenceNode := sweepLine.FindWithReferencePoint(referenceId, intersection)
 	if referenceNode == nil {
+		referenceNode = sweepLine.FindWithReferencePoint(referenceId, intersection)
 		panic("Invalid SweepLine state")
 	}
 	// Start building a slice off ordered nodes
@@ -215,9 +208,7 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 	}
 
 	newOrder := orderLinesByEndPoint(affectedNodes)
-	fmt.Println(newOrder)
 	for i,l := range newOrder {
-		fmt.Println(i, l)
 		n := affectedNodes[i]
 		n.Value = l
 	}

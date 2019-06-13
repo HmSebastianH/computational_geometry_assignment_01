@@ -7,7 +7,10 @@ package sweepLine
 import (
 	"fmt"
 	. "geometry"
+	"math"
 )
+
+var epsilon float64 = 0.00000001
 
 // Btree represents an AVL tree
 type SweepLine struct {
@@ -91,19 +94,19 @@ func (n *Node) findWithReferencePoint(lineId int, reference Point) *Node {
 		return n
 	}
 	ccw := Ccw(n.Value, reference)
-	if ccw > 0 {
-		// Search right subtree
-		return n.right.findWithReferencePoint(lineId, reference)
-	} else if ccw > 0 {
-		// Search left sub tree
-		return n.left.findWithReferencePoint(lineId, reference)
-	} else {
+	if math.Abs(ccw) < epsilon {
 		// There might be multiple lines with the same ccw, go through all of them
 		leftResult := n.left.findWithReferencePoint(lineId, reference)
 		if leftResult != nil {
 			return leftResult
 		}
 		return n.right.findWithReferencePoint(lineId, reference)
+	} else if ccw > 0 {
+		// Search right subtree
+		return n.right.findWithReferencePoint(lineId, reference)
+	} else { // -> ccw < 0
+		// Search left sub tree
+		return n.left.findWithReferencePoint(lineId, reference)
 	}
 }
 
