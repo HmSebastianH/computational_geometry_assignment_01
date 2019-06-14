@@ -160,8 +160,9 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			panic("Unknown event")
 		}
 
-		sweepLine.PrintOut()
-		eventQueue.PrintOut()
+
+		//sweepLine.PrintOut()
+		//eventQueue.PrintOut()
 		currentEvent = eventQueue.Pop()
 	}
 
@@ -211,10 +212,10 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 		referenceId = lineId
 		break
 	}
-	// TODO: This function might return nil currently
+
+
 	referenceNode := sweepLine.FindWithReferencePoint(referenceId, intersection)
 	if referenceNode == nil {
-		referenceNode = sweepLine.FindWithReferencePoint(referenceId, intersection)
 		panic("Invalid SweepLine state")
 	}
 	// Start building a slice off ordered nodes

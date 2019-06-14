@@ -7,6 +7,7 @@ import (
 	"geometry"
 	_ "geometry"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -62,7 +63,12 @@ func main() {
 	fmt.Println("Time passed (Reading Data): ", time.Since(startTime))
 
 	results := algorithms.LineSweep(data)
-
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].IndexA == results[j].IndexA {
+			return results[i].IndexB < results[j].IndexB
+		}
+		return results[i].IndexA < results[j].IndexA
+	})
 
 	writer := bufio.NewWriter(outputFile)
 	for _, result := range results {

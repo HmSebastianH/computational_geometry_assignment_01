@@ -163,8 +163,8 @@ func (n *Node) insert(parent *Node, value Line, nodeToInsert *Node) *Node {
 	}
 
 	n.height = n.maxHeight() + 1
-	currentBalance := balance(n)
-
+	//currentBalance := balance(n)
+/*
 	if currentBalance > 1 {
 		ccw = Ccw(n.left.Value, value.Start)
 		if ccw < 0 {
@@ -185,7 +185,7 @@ func (n *Node) insert(parent *Node, value Line, nodeToInsert *Node) *Node {
 		} else {
 			fmt.Println("TODO")
 		}
-	}
+	}*/
 	return n
 }
 
@@ -209,6 +209,31 @@ func (t *SweepLine) Head() *Line {
 	}
 	return nil
 }
+
+func (t *SweepLine) PrintRight() {
+	fmt.Print("Min ->")
+	if t.Root != nil {
+		n := t.Root.min()
+		for n != nil {
+			fmt.Print(" ", n.Value.Index)
+			n = n.Right()
+		}
+	}
+	fmt.Println(".")
+}
+
+func (t *SweepLine) PrintLeft() {
+	fmt.Print("Max ->")
+	if t.Root != nil {
+		n := t.Root.max()
+		for n != nil {
+			fmt.Print(" ", n.Value.Index)
+			n = n.Left()
+		}
+	}
+	fmt.Println(".")
+}
+
 
 // Tail returns the last value in the tree
 func (t *SweepLine) Tail() *Line {
@@ -266,13 +291,13 @@ func (n *Node) Right() *Node {
 
 	// I am a left node with no children, search a parent which is left of me
 	currentParent := n.parent
-	currentParrentChild := n
+	currentParentChild := n
 	for currentParent != nil {
-		if currentParent.left != nil && currentParrentChild.Value.Index == currentParent.left.Value.Index {
+		if currentParent.left != nil && currentParentChild.Value.Index == currentParent.left.Value.Index {
 			// We found a path where the tree we came from is on the left, therefore the node is to the right
 			return currentParent
 		}
-		currentParrentChild = currentParent
+		currentParentChild = currentParent
 		currentParent = currentParent.parent
 	}
 
@@ -331,7 +356,7 @@ func (n *Node) deleteSelf(sweepLine *SweepLine) bool {
 	t.deleteSelf(sweepLine)
 
 	n.height = n.maxHeight() + 1
-	bal := balance(n)
+	/*bal := balance(n)
 	if bal > 1 {
 		if balance(n.left) >= 0 {
 			n.rotateRight()
@@ -348,7 +373,7 @@ func (n *Node) deleteSelf(sweepLine *SweepLine) bool {
 		n.right = n.right.rotateRight()
 		n.rotateLeft()
 		return true
-	}
+	}*/
 
 	return true
 }

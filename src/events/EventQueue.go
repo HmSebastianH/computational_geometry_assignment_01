@@ -99,7 +99,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		n.left = insert(n.left, value, added)
 	} else {
 		// TODO: This is because intersections can be detected multiple times
-		fmt.Println("Warning: Duplicate Event") // This is not a warning, we could just replace it
+		fmt.Println("Warning: Duplicate Event", value.GetX(), value.String()) // This is not a warning, we could just replace it
 	}
 
 	n.height = n.maxHeight() + 1

@@ -10,6 +10,7 @@ type SweepEvent interface {
 	GetX() float64
 	getPriority() int8
 	CompareTo(e SweepEvent) int8
+	String() string
 }
 
 
