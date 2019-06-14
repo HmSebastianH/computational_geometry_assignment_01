@@ -115,7 +115,11 @@ func (n *Node) findVerticalIntersections(line Line) []MatchingIndices {
 		return result
 	} else { // startCCw > 0
 		// This line does not intersect but lines to its right might
-		return n.right.findVerticalIntersections(line)
+		endCcw := Ccw(n.Value, line.End)
+		if math.Abs(endCcw) < epsilon {
+			result = append(result, *NewMatchingIndices(line.Index, n.Value.Index))
+		}
+		return append(result, n.right.findVerticalIntersections(line)...)
 	}
 }
 

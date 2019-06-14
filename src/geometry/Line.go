@@ -1,6 +1,9 @@
 package geometry
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type Line struct {
 	Index int
@@ -66,7 +69,7 @@ func (p *Line) IsCrossedBy(q Line) bool {
 	return ccwA * ccwB <= 0
 }
 
-func (p *Line) GetIntersectionWith(q Line, intersection *Point) bool {
+func (p *Line) GetIntersectionWith(q Line) (*Point, bool) {
 	// "Stolen" from Stackoverflow :)
 	// https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 
@@ -88,13 +91,16 @@ func (p *Line) GetIntersectionWith(q Line, intersection *Point) bool {
 		//*i_x = p0_x + (t * s0_x);
 		//if (i_y != NULL)
 		//*i_y = p0_y + (t * s0_y);
-		*intersection = Point{p.Start.X + (t * s0_x), p.Start.Y + (t * s0_y)}
+		intersection := Point{p.Start.X + (t * s0_x), p.Start.Y + (t * s0_y)}
 		fmt.Println("X")
-		return true
+		return &intersection, true
+	}
+	if (math.IsNaN(s) || math.IsNaN(t)) && q.IsCrossedBy(*p) {
+		return nil, true
 	}
 
 	fmt.Println("_")
-	return false // No collision
+	return nil, false // No collision
 }
 
 func (a *Line) isPoint () bool {

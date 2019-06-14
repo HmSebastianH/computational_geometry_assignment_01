@@ -49,12 +49,14 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			// Add the line end event now too, this is done later for performance reasons
 			eventQueue.Insert(events.NewLineEndEvent(event.Line))
 			insertedNode := sweepLine.Insert(event.Line)
-			checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
+			intersecs := checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
 				return n.Left()
 			})
-			checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
+			allIntersections = append(allIntersections, intersecs...)
+			intersecs = checkNeighboringIntersections(insertedNode, event.GetX(), eventQueue, func(n *Node) *Node {
 				return n.Right()
 			})
+			allIntersections = append(allIntersections, intersecs...)
 		case *events.LineEndEvent:
 			// Get -> Right neighbor, check against left neighbor
 			event := currentEvent.(*events.LineEndEvent)
@@ -71,12 +73,14 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			leftNode := lineNode.Left()
 			rightNode := lineNode.Right()
 			if leftNode != nil && rightNode != nil {
-				var intersection Point
-				if leftNode.Value.IsCrossedBy(rightNode.Value) {
-					println("Intersec!")
-				}
-				if leftNode.Value.GetIntersectionWith(rightNode.Value, &intersection) && intersection.X > event.GetX() {
-					eventQueue.Insert(events.NewIntersectionEvent(intersection, leftNode.Value, rightNode.Value))
+				intersection, isIntersec := leftNode.Value.GetIntersectionWith(rightNode.Value)
+				if isIntersec {
+					if intersection != nil && intersection.X > event.GetX() {
+						eventQueue.Insert(events.NewIntersectionEvent(*intersection, leftNode.Value, rightNode.Value))
+					} else {
+						// Just add store the intersection but no event for overlaps
+						allIntersections = append(allIntersections, *NewMatchingIndices(leftNode.Value.Index, rightNode.Value.Index))
+					}
 				}
 			}
 
@@ -102,9 +106,9 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				}
 			}
 
-			for iLine,vLine := range nVerticalLines {
+			for iLine, vLine := range nVerticalLines {
 				// First check the line against the remaining other vertical lines
-				for _,other := range nVerticalLines[iLine+1:] {
+				for _, other := range nVerticalLines[iLine+1:] {
 					if vLine.IsCrossedBy(other) {
 						allIntersections = append(allIntersections, *NewMatchingIndices(vLine.Index, other.Index))
 					}
@@ -113,7 +117,6 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				verticalMatches := sweepLine.FindVerticalIntersections(vLine)
 				allIntersections = append(allIntersections, verticalMatches...)
 			}
-
 
 		case *events.IntersectionEvent:
 			event := currentEvent.(*events.IntersectionEvent)
@@ -140,16 +143,18 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			}
 			affectedNodes := reverseLineOrder(event.Intersection, involvedIds, sweepLine)
 
-			if affectedNodes != nil && len(affectedNodes) > 0{
+			if affectedNodes != nil && len(affectedNodes) > 0 {
 				// TODO: The checks might have to be repeated for lines with the same ccw as the outer nodes
 				leftMostNode := affectedNodes[0]
-				checkNeighboringIntersections(leftMostNode, event.GetX(), eventQueue, func(n *Node) *Node {
+				intersecs := checkNeighboringIntersections(leftMostNode, event.GetX(), eventQueue, func(n *Node) *Node {
 					return n.Left()
 				})
-				rightMostNode := affectedNodes[len(affectedNodes) - 1]
-				checkNeighboringIntersections(rightMostNode, event.GetX(), eventQueue, func(n *Node) *Node {
+				allIntersections = append(allIntersections, intersecs...)
+				rightMostNode := affectedNodes[len(affectedNodes)-1]
+				intersecs = checkNeighboringIntersections(rightMostNode, event.GetX(), eventQueue, func(n *Node) *Node {
 					return n.Right()
 				})
+				allIntersections = append(allIntersections, intersecs...)
 			}
 		default:
 			panic("Unknown event")
@@ -160,9 +165,23 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 		currentEvent = eventQueue.Pop()
 	}
 
+	// Overlapping lines might be detected as intersections multiple times
+	allIntersections = filterDuplicates(allIntersections)
 	fmt.Println("Done. Intersects: ", len(allIntersections))
 
 	return allIntersections
+}
+
+func filterDuplicates(allIntersecs []MatchingIndices) []MatchingIndices {
+	keys := make(map[MatchingIndices]struct{})
+	list := make([]MatchingIndices, 0, len(allIntersecs))
+	for _, entry := range allIntersecs {
+		if _, value := keys[entry]; !value {
+			keys[entry] = struct{}{}
+			list = append(list, entry)
+		}
+	}
+	return list
 }
 
 // reverseLineOrder is used to handle the swapping of lines in the sweep line after a intersection occured.
@@ -234,7 +253,7 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 	}
 
 	newOrder := orderLinesByEndPoint(affectedNodes)
-	for i,l := range newOrder {
+	for i, l := range newOrder {
 		n := affectedNodes[i]
 		n.Value = l
 	}
@@ -247,10 +266,12 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 // - Lines above lines with intersections (or above a ccw which had intersections)
 // - Lines with the same endpoint ccw as the lines described above
 // The same checks are done for lines directly below the inserted line
-func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *events.EventQueue, iterFunc func(*Node) *Node) {
+func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *events.EventQueue, iterFunc func(*Node) *Node) []MatchingIndices {
 	leftN := iterFunc(n)
 	ccwHadIntersec := true
 	previousEndPoint := n.Value.End
+
+	allIntersections := make([]MatchingIndices, 0)
 	for leftN != nil {
 		currentCcw := Ccw(leftN.Value, previousEndPoint)
 		if currentCcw != 0 {
@@ -263,11 +284,13 @@ func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *events.
 			}
 		}
 		// Do the actual intersection check
-		var intersection Point
-		if leftN.Value.GetIntersectionWith(n.Value, &intersection){
-			// TODO: Add a flag for overlap events to avoid any swapping for them
-			if intersection.X >= xThresh {
-				eventQueue.Insert(events.NewIntersectionEvent(intersection, leftN.Value, n.Value))
+		intersection, isIntersec := leftN.Value.GetIntersectionWith(n.Value)
+		if isIntersec {
+			if intersection != nil && intersection.X > xThresh {
+				eventQueue.Insert(events.NewIntersectionEvent(*intersection, leftN.Value, n.Value))
+			} else {
+				// Just add store the intersection but no event for overlaps
+				allIntersections = append(allIntersections, *NewMatchingIndices(leftN.Value.Index, n.Value.Index))
 			}
 			ccwHadIntersec = true
 		}
@@ -275,6 +298,7 @@ func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *events.
 		previousEndPoint = leftN.Value.End
 		leftN = iterFunc(leftN)
 	}
+	return allIntersections
 }
 
 func orderLinesByEndPoint(data []*Node) []Line {
