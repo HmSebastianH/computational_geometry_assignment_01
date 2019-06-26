@@ -28,7 +28,7 @@ func check(e error) {
 func main() {
 
 	startTime := time.Now()
-	fileName := "100000_1"
+	fileName := "1000_10"
 	inputFile, err := os.Open(fmt.Sprintf("data/s_%s.dat", fileName))
 	check(err)
 

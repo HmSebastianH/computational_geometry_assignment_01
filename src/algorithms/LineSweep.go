@@ -105,6 +105,8 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				}
 			}
 
+			allSortedLines := sweepLine.ToSlice()
+			// This is a temporary simple solution to vertical lines, there is a better way using the ccw
 			for iLine, vLine := range nVerticalLines {
 				// First check the line against the remaining other vertical lines
 				for _, other := range nVerticalLines[iLine+1:] {
@@ -113,8 +115,13 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 					}
 				}
 				// Then search for vertical overlaps
-				verticalMatches := sweepLine.FindVerticalIntersections(vLine)
-				allIntersections = append(allIntersections, verticalMatches...)
+				for _,other := range allSortedLines {
+					if vLine.IsCrossedBy(other) {
+						allIntersections = append(allIntersections, *NewMatchingIndices(vLine.Index, other.Index))
+					}
+				}
+				//verticalMatches := sweepLine.FindVerticalIntersections(vLine)
+				//allIntersections = append(allIntersections, verticalMatches...)
 			}
 
 		case *events.IntersectionEvent:

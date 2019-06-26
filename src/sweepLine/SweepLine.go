@@ -50,6 +50,17 @@ func (t *SweepLine) balance() int8 {
 	return 0
 }
 
+func (t *SweepLine) ToSlice() []Line {
+	return t.Root.toSlice()
+}
+
+func (n *Node) toSlice() []Line {
+	if n == nil {
+		return []Line{}
+	}
+	return append(append(n.left.toSlice(), n.Value), n.right.toSlice()...)
+}
+
 func (t *SweepLine) PrintOut() {
 	fmt.Print("Sweep: [")
 	t.Root.printOut()
