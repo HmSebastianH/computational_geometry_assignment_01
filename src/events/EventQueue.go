@@ -75,7 +75,6 @@ func (n *Node) assertOrder() bool {
 func (t *EventQueue) Insert(value SweepEvent) *EventQueue {
 	added := false
 	t.Root = insert(t.Root, value, &added)
-	t.AssertOrder()
 	return t
 }
 
@@ -98,8 +97,8 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		// Points with overlap or to the left of the line are inserted to its left
 		n.left = insert(n.left, value, added)
 	} else {
-		// TODO: This is because intersections can be detected multiple times
-		fmt.Println("Warning: Duplicate Event", value.GetX(), value.String()) // This is not a warning, we could just replace it
+		// This is because intersections can be detected multiple times
+		//fmt.Println("Warning: Duplicate Event", value.GetX(), value.String()) // This is not a warning, we could just replace it
 	}
 
 	n.height = n.maxHeight() + 1

@@ -8,18 +8,9 @@ import (
 	. "sweepLine"
 )
 
+//noinspection GoBoolExpressions
 func LineSweep(allLines []*Line) []MatchingIndices {
-	// Assumptions about the data:
-	// x-Koordinaten der Schnitt- und Endpunkte sind paarweise
-	// verschieden
-	// • Länge der Segmente > 0
-	// • nur echte Schnittpunkte
-	// • keine Linien parallel zur y-Achse
-	// • keine Mehrfachschnittpunkte
-	// • keine überlappenden Segmente
-
-	// Extra handling of: Vertical lines, Points, Multiple Intersections (? merge intersection  events if in same point)
-	// Vertical lines can be checked in tree with ccw too (Crosses all lines with different ccws on start and end point)
+	debug := false
 
 	// Create the event queue to work on
 	eventQueue := events.NewEventQueue()
@@ -33,15 +24,20 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 		}
 	}
 
-	if !eventQueue.AssertOrder() {
-		panic("Sanity check failed")
+	if debug {
+		if !eventQueue.AssertOrder() {
+			panic("Sanity check failed")
+		}
+		eventQueue.PrintOut()
 	}
-	eventQueue.PrintOut()
 	allIntersections := make([]MatchingIndices, 0)
 
 	sweepLine := NewSweepLine()
 	currentEvent := eventQueue.Pop()
 	for currentEvent != nil {
+		if debug {
+			fmt.Println(currentEvent.String())
+		}
 		// Handle the different events:
 		switch currentEvent.(type) {
 		case *events.LineStartEvent:
@@ -99,6 +95,9 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 				if ok && additionalEvent.GetX() == event.GetX() {
 					// Gather all Vertical Line events on the same X-Line
 					nVerticalLines = append(nVerticalLines, additionalEvent.Line)
+					if debug {
+						fmt.Println("& ", additionalEvent.String())
+					}
 					eventQueue.Pop()
 					nextEvent = eventQueue.Head()
 				} else {
@@ -135,6 +134,9 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 						*NewMatchingIndices(additionalEvent.LineA.Index, additionalEvent.LineB.Index))
 					involvedIds[additionalEvent.LineA.Index] = struct{}{}
 					involvedIds[additionalEvent.LineB.Index] = struct{}{}
+					if debug {
+						fmt.Println("& ", additionalEvent.String())
+					}
 					eventQueue.Pop() // This Event will be "handled"
 					nextEvent = eventQueue.Head()
 				} else {
@@ -160,10 +162,12 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			panic("Unknown event")
 		}
 
-
-		//sweepLine.PrintOut()
-		//eventQueue.PrintOut()
+		if debug {
+			sweepLine.PrintOut()
+			//eventQueue.PrintOut()
+		}
 		currentEvent = eventQueue.Pop()
+
 	}
 
 	// Overlapping lines might be detected as intersections multiple times
