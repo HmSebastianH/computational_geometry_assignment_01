@@ -64,8 +64,6 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			// Gather all nodes to the left of the deleted node which have the same endpoint ccw (read: same direction)
 			// and all nodes to the right of the deleted node which have the same endpoint ccw
 			// Check for intersections in the opposing direction for all those nodes.
-			// TODO: delete the node before doing these checks
-			// TODO: for complete coverage the check method should be used to cover more casses
 			leftNode := lineNode.Left()
 			rightNode := lineNode.Right()
 			if leftNode != nil && rightNode != nil {
@@ -83,11 +81,6 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			sweepLine.Delete(lineNode)
 		case *events.VerticalLineEvent:
 			event := currentEvent.(*events.VerticalLineEvent)
-			// TODO:
-			//  1. Collect all Vertical Line events together
-			//  2. Sort them by y to compare to each other (look for overlaps)
-			//  3. Check if ccw of start and end are different for any lines in the sweep line
-			//  ! Do not add any of these lines to the sweep line
 			nextEvent := eventQueue.Head()
 			nVerticalLines := []Line{event.Line}
 			for nextEvent != nil {

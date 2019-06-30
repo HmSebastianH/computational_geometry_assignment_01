@@ -24,7 +24,7 @@ func check(e error) {
 
 func TestProfiling(t *testing.T) {
 	startTime := time.Now()
-	fileName := "10000_1"
+	fileName := "100000_1"
 	inputFile, err := os.Open(fmt.Sprintf("C:/Users/sebas/Desktop/hm/geometry/computational_geometry_assignment_01/data/s_%s.dat", fileName))
 	check(err)
 
