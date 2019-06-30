@@ -62,10 +62,10 @@ func (n *Node) assertOrder() bool {
 	}
 	n.left.assertOrder()
 	n.right.assertOrder()
-	if n.left != nil && n.Value.CompareTo(n.left.Value) != 1 {
+	if n.left != nil && n.Value.Comp(n.left.Value) != 1 {
 		return false
 	}
-	if n.right != nil && n.Value.CompareTo(n.right.Value) != -1 {
+	if n.right != nil && n.Value.Comp(n.right.Value) != -1 {
 		return false
 	}
 	return true
@@ -84,11 +84,11 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 		*added = true
 		return (&Node{Value: value}).Init()
 	}
-	comp := value.CompareTo(n.Value)
-	if value.CompareTo(n.Value)*(-1) != n.Value.CompareTo(value) {
+	comp := value.Comp(n.Value)
+	if value.Comp(n.Value)*(-1) != n.Value.Comp(value) {
 		panic("!!")
-		//aRes := value.CompareTo(n.Value)
-		//bRes := n.Value.CompareTo(value)
+		//aRes := value.Comp(n.Value)
+		//bRes := n.Value.Comp(value)
 		//_, _ = aRes, bRes
 	}
 	if comp > 0 {
@@ -107,7 +107,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 	currentBalance := balance(n)
 
 	if currentBalance > 1 {
-		comp := value.CompareTo(n.left.Value)
+		comp := value.Comp(n.left.Value)
 		if comp < 0 {
 			return n.rotateRight()
 		} else if comp > 0 {
@@ -115,7 +115,7 @@ func insert(n *Node, value SweepEvent, added *bool) *Node {
 			return n.rotateRight()
 		}
 	} else if currentBalance < -1 {
-		comp = value.CompareTo(n.right.Value)
+		comp = value.Comp(n.right.Value)
 		if comp > 0 {
 			return n.rotateLeft()
 		} else {
@@ -158,7 +158,6 @@ func (t *EventQueue) Pop() SweepEvent {
 	}
 	parentNode.left = headNode.right
 
-	t.balance() // TODO: test performance without balancing
 	// Note: A tree is probably not the bestt structure for almost always accessing the first member
 	return headNode.Value
 }

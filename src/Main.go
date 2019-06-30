@@ -62,8 +62,8 @@ func main() {
 
 	fmt.Println("Time passed (Reading Data): ", time.Since(startTime))
 
-	//results := algorithms.LineSweep(data)
-	results := algorithms.PrimitiveSearch(data)
+	results := algorithms.LineSweep(data)
+	//results := algorithms.PrimitiveSearch(data)
 
 	sort.Slice(results, func(i, j int) bool {
 		if results[i].IndexA == results[j].IndexA {

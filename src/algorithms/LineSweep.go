@@ -4,6 +4,7 @@ import (
 	"events"
 	"fmt"
 	. "geometry"
+	"github.com/ross-oreto/go-tree"
 	"sort"
 	. "sweepLine"
 )
@@ -12,8 +13,7 @@ import (
 func LineSweep(allLines []*Line) []MatchingIndices {
 	debug := false
 
-	// Create the event queue to work on
-	eventQueue := events.NewEventQueue()
+	eventQueue := new(tree.Btree)
 
 	// Fill it with all known start and end events
 	for _, line := range allLines {
@@ -24,16 +24,10 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 		}
 	}
 
-	if debug {
-		if !eventQueue.AssertOrder() {
-			panic("Sanity check failed")
-		}
-		eventQueue.PrintOut()
-	}
 	allIntersections := make([]MatchingIndices, 0)
 
 	sweepLine := NewSweepLine()
-	currentEvent := eventQueue.Pop()
+	currentEvent := eventQueue.Pull().(events.SweepEvent)
 	for currentEvent != nil {
 		if debug {
 			fmt.Println(currentEvent.String())
@@ -81,18 +75,18 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			sweepLine.Delete(lineNode)
 		case *events.VerticalLineEvent:
 			event := currentEvent.(*events.VerticalLineEvent)
-			nextEvent := eventQueue.Head()
+			nextEvent := eventQueue.Head().(events.SweepEvent)
 			nVerticalLines := []Line{event.Line}
 			for nextEvent != nil {
-				additionalEvent, ok := nextEvent.Value.(*events.VerticalLineEvent)
+				additionalEvent, ok := nextEvent.(*events.VerticalLineEvent)
 				if ok && additionalEvent.GetX() == event.GetX() {
 					// Gather all Vertical Line events on the same X-Line
 					nVerticalLines = append(nVerticalLines, additionalEvent.Line)
 					if debug {
 						fmt.Println("& ", additionalEvent.String())
 					}
-					eventQueue.Pop()
-					nextEvent = eventQueue.Head()
+					eventQueue.Pull()
+					nextEvent = eventQueue.Head().(events.SweepEvent)
 				} else {
 					break
 				}
@@ -127,7 +121,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 
 			nextEvent := eventQueue.Head()
 			for nextEvent != nil {
-				additionalEvent, ok := nextEvent.Value.(*events.IntersectionEvent)
+				additionalEvent, ok := nextEvent.(*events.IntersectionEvent)
 				if ok && additionalEvent.Intersection == event.Intersection {
 					// Because that s the best way to handle sets ....
 					allIntersections = append(allIntersections,
@@ -137,7 +131,7 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 					if debug {
 						fmt.Println("& ", additionalEvent.String())
 					}
-					eventQueue.Pop() // This Event will be "handled"
+					eventQueue.Pull() // This Event will be "handled"
 					nextEvent = eventQueue.Head()
 				} else {
 					break
@@ -166,7 +160,12 @@ func LineSweep(allLines []*Line) []MatchingIndices {
 			sweepLine.PrintOut()
 			//eventQueue.PrintOut()
 		}
-		currentEvent = eventQueue.Pop()
+		nextval := eventQueue.Pull()
+		if nextval == nil {
+			currentEvent = nil
+		} else {
+			currentEvent = nextval.(events.SweepEvent)
+		}
 
 	}
 
@@ -271,7 +270,7 @@ func reverseLineOrder(intersection Point, lineIds map[int]struct{}, sweepLine *S
 // - Lines above lines with intersections (or above a ccw which had intersections)
 // - Lines with the same endpoint ccw as the lines described above
 // The same checks are done for lines directly below the inserted line
-func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *events.EventQueue, iterFunc func(*Node) *Node) []MatchingIndices {
+func checkNeighboringIntersections(n *Node, xThresh float64, eventQueue *tree.Btree, iterFunc func(*Node) *Node) []MatchingIndices {
 	leftN := iterFunc(n)
 	ccwHadIntersec := true
 	previousEndPoint := n.Value.End

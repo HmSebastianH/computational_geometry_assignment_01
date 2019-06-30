@@ -3,13 +3,14 @@ package events
 import (
 	"fmt"
 	. "geometry"
+	"github.com/ross-oreto/go-tree"
 )
 
 // In general every sweep event is associated with a x point at which it is triggered
 type SweepEvent interface {
 	GetX() float64
 	getPriority() int8
-	CompareTo(e SweepEvent) int8
+	Comp(val tree.Val) int8
 	String() string
 }
 
@@ -27,7 +28,8 @@ func (t LineStartEvent) getPriority() int8 { return 1 }
 func NewLineStartEvent(line Line) * LineStartEvent {
 	return &LineStartEvent{line}
 }
-func (t LineStartEvent) CompareTo(e SweepEvent) int8 {
+func (t LineStartEvent) Comp(val tree.Val) int8 {
+	e := val.(SweepEvent)
 	defaultResult := defaultComp(t, e)
 	if defaultResult != 0 {
 		return defaultResult
@@ -51,7 +53,8 @@ func (t VerticalLineEvent) GetX() float64 {
 	return t.Line.Start.X
 }
 func (t VerticalLineEvent) getPriority() int8 { return 2 }
-func (t VerticalLineEvent) CompareTo(e SweepEvent) int8 {
+func (t VerticalLineEvent) Comp(val tree.Val) int8 {
+	e := val.(SweepEvent)
 	defaultResult := defaultComp(t, e)
 	if defaultResult != 0 {
 		return defaultResult
@@ -82,7 +85,8 @@ func (t IntersectionEvent) getPriority() int8 { return 3 }
 func NewIntersectionEvent(intersection Point, lineA, lineB Line) * IntersectionEvent {
 	return &IntersectionEvent{intersection, lineA, lineB}
 }
-func (t IntersectionEvent) CompareTo(e SweepEvent) int8 {
+func (t IntersectionEvent) Comp(val tree.Val) int8 {
+	e := val.(SweepEvent)
 	defaultResult := defaultComp(t, e)
 	if defaultResult != 0 {
 		return defaultResult
@@ -131,7 +135,8 @@ func (t LineEndEvent) getPriority() int8 { return 4 }
 func NewLineEndEvent(line Line) * LineEndEvent {
 	return &LineEndEvent{line}
 }
-func (t LineEndEvent) CompareTo(e SweepEvent) int8 {
+func (t LineEndEvent) Comp(val tree.Val) int8 {
+	e := val.(SweepEvent)
 	defaultResult := defaultComp(t, e)
 	if defaultResult != 0 {
 		return defaultResult
