@@ -26,10 +26,13 @@ func check(e error) {
 
 
 func main() {
+	fileName := "1000_10"
+	filePath := fmt.Sprintf("data/s_%s.dat", fileName)
 
+	fmt.Printf("Start reading: %s\n", filePath)
 	startTime := time.Now()
-	fileName := "1000_1"
-	inputFile, err := os.Open(fmt.Sprintf("data/s_%s.dat", fileName))
+
+	inputFile, err := os.Open(filePath)
 	check(err)
 
 	outputFile, err := os.Create(fmt.Sprintf("data/result_%s.dat", fileName))
@@ -62,7 +65,10 @@ func main() {
 
 	fmt.Println("Time passed (Reading Data): ", time.Since(startTime))
 
+	//fmt.Println("Start Line Sweep...")
 	//results := algorithms.LineSweep(data)
+
+	fmt.Println("Start Primitive Search...")
 	results := algorithms.PrimitiveSearch(data)
 
 	sort.Slice(results, func(i, j int) bool {
@@ -79,5 +85,5 @@ func main() {
 	}
 	check(writer.Flush())
 
-	fmt.Println("Time passed: ", time.Since(startTime))
+	fmt.Println("Found ", len(results), " Intersections, Total Time passed: ", time.Since(startTime))
 }
