@@ -28,7 +28,7 @@ func check(e error) {
 func main() {
 
 	startTime := time.Now()
-	fileName := "100000_1"
+	fileName := "1000_1"
 	inputFile, err := os.Open(fmt.Sprintf("data/s_%s.dat", fileName))
 	check(err)
 
@@ -62,8 +62,8 @@ func main() {
 
 	fmt.Println("Time passed (Reading Data): ", time.Since(startTime))
 
-	results := algorithms.LineSweep(data)
-	//results := algorithms.PrimitiveSearch(data)
+	//results := algorithms.LineSweep(data)
+	results := algorithms.PrimitiveSearch(data)
 
 	sort.Slice(results, func(i, j int) bool {
 		if results[i].IndexA == results[j].IndexA {
